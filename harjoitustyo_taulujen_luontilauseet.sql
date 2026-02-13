@@ -96,7 +96,7 @@ CREATE TABLE tarvikkeet (
     ostohinta DECIMAL(10,2) NOT NULL CHECK (ostohinta >= 0),
     myyntihinta DECIMAL(10,2) NOT NULL CHECK (myyntihinta >= 0),
     yksikko VARCHAR(10) CHECK (yksikko IN ('kpl', 'm')), -- kpl = kappale, m = metri, mahdollista lisätä muita yksikköjä tarpeen mukaan
-    alv_prosentti DECIMAL(4,2) DEFAULT 24.00 CHECK (alv_prosentti >= 0),
+    alv_prosentti DECIMAL(4,2) DEFAULT 24.00 CHECK (alv_prosentti >= 0 AND alv_prosentti <= 100),
     varasto DECIMAL(10,2) DEFAULT 0 CHECK (varasto >= 0)
 );
 
@@ -122,7 +122,7 @@ CREATE TABLE tuntityo_hinnasto (
     tuntityo_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nimi VARCHAR(50) NOT NULL UNIQUE,
     hinta_netto DECIMAL(10,2) NOT NULL CHECK (hinta_netto >= 0),
-    alv_prosentti DECIMAL(4,2) DEFAULT 24.00 CHECK (alv_prosentti >= 0)
+    alv_prosentti DECIMAL(4,2) DEFAULT 24.00 CHECK (alv_prosentti >= 0 AND alv_prosentti <= 100)
 );
 
 COMMENT ON TABLE tuntityo_hinnasto IS 'Tuntityön hinnoittelu eri työlajille (esim. suunnittelu, työ, aputyö). Hinnat tallennetaan nettohintana (ilman ALV).';
