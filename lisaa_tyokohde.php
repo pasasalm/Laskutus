@@ -80,8 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form action="lisaa_tyokohde.php" method="POST" class="form-container">
         <div class="form-group">
-            <label>Valitse asiakas:</label>
+            <label>Asiakas *</label>
             <select name="client_id" required>
+                <option value="" disabled selected>Valitse asiakas</option>
                 <?php
                 while ($row = pg_fetch_assoc($client_list)) {
                         $id = $row['asiakas_id'];
@@ -93,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <br>
         <div class="form-group">
-            <label>Lisää työkohteen osoite:</label>
+            <label>Työkohteen osoite *</label>
             <input type="text" name="address" required>
         </div>
         <button type="submit" class="btn btn-primary">Lisää</button>
