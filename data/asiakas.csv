@@ -2,7 +2,7 @@ as_id;as_nimi;as_osoite;puh_nro;sahkoposti
 1;Hosunen, Jaska;Susimetsä;;
 2;Jokinen, Lissu;Nurmitie;;
 3;Näsänen, Masa;Masalantie;;
-4;Matti Meikäläinen;Kotikatu 5, 33200 Tampere;509876543;matti@email.fi
-5;Liisa Lukkari;Opintie 12, 33500 Tampere;451122334;liisa@lukkari.net
-6;Antti Asiakas;Esimerkkitie 1, 00100 Helsinki;400000001;antti@testi.fi
-7;Isännöitsijä Ilkka;Hallituskatu 10, 33100 Tampere;501112223;ilkka@isannointi.fi
+4;Meikäläinen, Matti;Kotikatu 5, 33200 Tampere;0509876543;matti@email.fi
+5;Lukkari, Liisa ;Opintie 12, 33500 Tampere;0451122334;liisa@lukkari.net
+6;Asiakas, Antti ;Esimerkkitie 1, 00100 Helsinki;0400000001;antti@testi.fi
+7;Isännöitsijä Ilkka;Hallituskatu 10, 33100 Tampere;0501112223;ilkka@isannointi.fi
