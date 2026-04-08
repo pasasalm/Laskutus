@@ -138,17 +138,17 @@ COMMENT ON COLUMN tuntityo_hinnasto.alv_prosentti IS 'Työlajin ALV-prosentti (o
 CREATE TABLE sopimus (
     sopimus_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tyokohde_id INT NOT NULL REFERENCES tyokohde(tyokohde_id) ON DELETE CASCADE,
-    tila VARCHAR(25) DEFAULT 'kesken' CHECK (tila IN ('kesken','valmis')),
+    tila VARCHAR(25) DEFAULT 'odottaa_hyväksyntää' CHECK (tila IN ('odottaa_hyväksyntää','kesken','valmis')),
     tyyppi VARCHAR(25) NOT NULL CHECK (tyyppi IN ('tuntityö', 'urakka')),
     pvm DATE NOT NULL DEFAULT CURRENT_DATE,
     urakka_tyo_netto DECIMAL(10,2) CHECK (urakka_tyo_netto >= 0),
     urakka_tarvikkeet_netto DECIMAL(10,2) CHECK (urakka_tarvikkeet_netto >= 0)
 );
 
-COMMENT ON TABLE sopimus IS 'Työkohteeseen liittyvä sopimus/työkokonaisuus. Tyyppi: tuntityö tai urakka. Tila: kesken (työ käynnissä) tai valmis (laskutusvalmis).';
+COMMENT ON TABLE sopimus IS 'Työkohteeseen liittyvä sopimus/työkokonaisuus. Tyyppi: tuntityö tai urakka. Tila: odottaa_hyväksyntää, kesken (työ käynnissä) tai valmis (laskutusvalmis/päätetty).';
 COMMENT ON COLUMN sopimus.sopimus_id IS 'Sopimuksen yksilöivä tunniste (identity).';
 COMMENT ON COLUMN sopimus.tyokohde_id IS 'Viite työkohteeseen, johon sopimus liittyy. Työkohteen kautta saadaan asiakas.';
-COMMENT ON COLUMN sopimus.tila IS 'Sopimuksen tila: "kesken" (työ käynnissä) tai "valmis" (laskutusvalmis/päätetty).';
+COMMENT ON COLUMN sopimus.tila IS 'Sopimuksen tila: "odottaa_hyväksyntää" (yrityksen käsiteltävä), "kesken" (työ käynnissä) tai "valmis" (laskutusvalmis/päätetty).';
 COMMENT ON COLUMN sopimus.tyyppi IS 'Sopimustyyppi: "tuntityö" (tuntiperusteinen laskutus) tai "urakka" (kiinteähintainen urakkasopimus).';
 COMMENT ON COLUMN sopimus.pvm IS 'Sopimuksen luonti- tai aloituspäivämäärä.';
 COMMENT ON COLUMN sopimus.urakka_tyo_netto IS 'Urakan työn osuus ilman ALV (€). Käytetään vain kun tyyppi = "urakka". Tarvitaan kotitalousvähennyksen laskentaan (R4).';
@@ -156,7 +156,6 @@ COMMENT ON COLUMN sopimus.urakka_tarvikkeet_netto IS 'Urakan tarvikkeiden osuus 
 
 CREATE INDEX idx_sopimus_tyokohde ON sopimus(tyokohde_id); -- Usein haetaan sopimuksia työkohteen perusteella, joten indeksi nopeuttaa näitä hakuja.
 CREATE INDEX idx_sopimus_tila ON sopimus(tila); -- Usein haetaan sopimuksia tilan perusteella, joten indeksi nopeuttaa näitä hakuja.
-
 
 -- ============================================================================
 -- 8. LASKU
@@ -240,4 +239,5 @@ COMMENT ON COLUMN tyo_suorite.alennusprosentti IS 'Alennusprosentti tuntityölle
 
 CREATE INDEX idx_tyo_suorite_sopimus ON tyo_suorite(sopimus_id); -- Usein haetaan työsuorituksia sopimuksen perusteella, joten indeksi nopeuttaa näitä hakuja.
 CREATE INDEX idx_tyo_suorite_pvm ON tyo_suorite(pvm); -- Usein haetaan työsuorituksia päivämäärän perusteella, joten indeksi nopeuttaa näitä hakuja.
+
 

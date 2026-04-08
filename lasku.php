@@ -82,7 +82,7 @@ function loadContracts($tyokohdeId) {
     $result = executeQuery(
         "SELECT sopimus_id, tyokohde_id, tila, tyyppi, pvm, urakka_tyo_netto, urakka_tarvikkeet_netto
          FROM sopimus
-         WHERE tyokohde_id = $1
+         WHERE tyokohde_id = $1 AND tila = 'kesken'
          ORDER BY pvm DESC, sopimus_id DESC",
         [$tyokohdeId]
     );
@@ -200,21 +200,6 @@ function getContractTotalsFromRows($workRows, $materialRows) {
     return $totals;
 }
 
-function loadContractTotals($sopimusId) {
-    if (!$sopimusId) {
-        return null;
-    }
-
-    $result = executeQuery(
-        "SELECT tyon_summa_netto, tarvikkeet_summa_netto
-         FROM sopimus_summat
-         WHERE sopimus_id = $1",
-        [$sopimusId]
-    );
-
-    return fetchOne($result);
-}
-
 function loadContractInvoices($sopimusId) {
     if (!$sopimusId) {
         return [];
@@ -229,6 +214,58 @@ function loadContractInvoices($sopimusId) {
     );
 
     return fetchAll($result);
+}
+
+function getUrakkaInstallmentInfo($sopimusId, $invoiceId = null) {
+    if (!$sopimusId) {
+        return ['count' => 1, 'index' => null];
+    }
+
+    $countResult = executeQuery(
+        "SELECT COUNT(*) AS installment_count
+         FROM lasku
+         WHERE sopimus_id = $1
+           AND muistutus_nro = 0
+           AND edellinen_lasku_id IS NULL",
+        [$sopimusId]
+    );
+    $countRow = fetchOne($countResult);
+    $count = (int) ($countRow['installment_count'] ?? 0);
+    if ($count <= 0) {
+        $count = 1;
+    }
+
+    $index = null;
+    if ($invoiceId) {
+        $indexResult = executeQuery(
+            "WITH ordered AS (
+                SELECT lasku_id,
+                       ROW_NUMBER() OVER (ORDER BY pvm ASC, lasku_id ASC) AS era_index
+                FROM lasku
+                WHERE sopimus_id = $1
+                  AND muistutus_nro = 0
+                  AND edellinen_lasku_id IS NULL
+             )
+             SELECT era_index
+             FROM ordered
+             WHERE lasku_id = $2
+             LIMIT 1",
+            [$sopimusId, $invoiceId]
+        );
+        $indexRow = fetchOne($indexResult);
+        if ($indexRow && isset($indexRow['era_index'])) {
+            $index = (int) $indexRow['era_index'];
+        }
+    }
+
+    return ['count' => $count, 'index' => $index];
+}
+
+function getNextInvoiceNumber() {
+    $result = executeQuery("SELECT COALESCE(MAX(laskun_nro), 0) + 1 AS next_number FROM lasku");
+    $row = fetchOne($result);
+
+    return (int) ($row['next_number'] ?? 1);
 }
 
 function loadInvoiceById($invoiceId) {
@@ -270,9 +307,60 @@ function loadInvoiceById($invoiceId) {
     return fetchOne($result);
 }
 
-function loadInvoiceLineItems($sopimusId) {
+function loadInvoiceLineItems($sopimusId, $invoiceId = null) {
     if (!$sopimusId) {
         return [];
+    }
+
+    $contractResult = executeQuery(
+        "SELECT tyyppi, urakka_tyo_netto, urakka_tarvikkeet_netto
+         FROM sopimus
+         WHERE sopimus_id = $1
+         LIMIT 1",
+        [$sopimusId]
+    );
+    $contract = fetchOne($contractResult);
+
+    if ($contract && ($contract['tyyppi'] ?? '') === 'urakka') {
+        $installmentInfo = getUrakkaInstallmentInfo($sopimusId, $invoiceId);
+        $divider = max(1, (int) ($installmentInfo['count'] ?? 1));
+        $eraIndex = $installmentInfo['index'];
+        $eraSuffix = $eraIndex !== null ? ' (Erä ' . $eraIndex . '/' . $divider . ')' : ($divider > 1 ? ' (Eräjako ' . $divider . ')' : '');
+
+        $tyoNetto = ((float) ($contract['urakka_tyo_netto'] ?? 0)) / $divider;
+        $tarvikeNetto = ((float) ($contract['urakka_tarvikkeet_netto'] ?? 0)) / $divider;
+        $alvPercent = 24.0;
+
+        return [
+            [
+                'jarjestys' => 1,
+                'rivityyppi' => 'tyo',
+                'nimike' => 'Urakka, työosuus' . $eraSuffix,
+                'maara' => 1,
+                'yksikko' => 'erä',
+                'yksikkohinta_netto' => round($tyoNetto, 2),
+                'alennus_prosentti' => 0,
+                'alv_prosentti' => $alvPercent,
+                'total_netto_ilman_alennusta' => round($tyoNetto, 2),
+                'total_netto' => round($tyoNetto, 2),
+                'total_alv' => round($tyoNetto * ($alvPercent / 100.0), 2),
+                'total_brutto' => round($tyoNetto * (1 + $alvPercent / 100.0), 2)
+            ],
+            [
+                'jarjestys' => 2,
+                'rivityyppi' => 'tarvike',
+                'nimike' => 'Urakka, tarvikkeet' . $eraSuffix,
+                'maara' => 1,
+                'yksikko' => 'erä',
+                'yksikkohinta_netto' => round($tarvikeNetto, 2),
+                'alennus_prosentti' => 0,
+                'alv_prosentti' => $alvPercent,
+                'total_netto_ilman_alennusta' => round($tarvikeNetto, 2),
+                'total_netto' => round($tarvikeNetto, 2),
+                'total_alv' => round($tarvikeNetto * ($alvPercent / 100.0), 2),
+                'total_brutto' => round($tarvikeNetto * (1 + $alvPercent / 100.0), 2)
+            ]
+        ];
     }
 
     $result = executeQuery(
@@ -792,7 +880,7 @@ if ($previewInvoiceId) {
     }
 
     $companyInfo = loadCompanyInfo();
-    $lineItems = loadInvoiceLineItems($invoiceData['sopimus_id']);
+    $lineItems = loadInvoiceLineItems($invoiceData['sopimus_id'], $invoiceData['lasku_id']);
     renderInvoicePreview($invoiceData, $companyInfo, $lineItems, isset($_GET['print']) && $_GET['print'] === '1');
     exit;
 }
@@ -876,41 +964,207 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tyokohdeId = $_POST['tyokohde_id'] ?? null;
         $laskuNro = $_POST['lasku_nro'] ?? null;
         $pvm = $_POST['pvm'] ?? date('Y-m-d');
+        $todayIso = date('Y-m-d');
 
         if (!$sopimusId || !$laskuNro || !$pvm) {
             $error = 'Kaikki kentat ovat pakollisia.';
+        } elseif (!ctype_digit((string) $sopimusId) || !ctype_digit((string) $laskuNro)) {
+            $error = 'Virheellinen sopimus tai laskunumero.';
+        } elseif ($pvm < $todayIso) {
+            $error = 'Lähetyspäivä ei voi olla menneisyydessä.';
         } else {
-            $checkResult = executeQuery(
-                "SELECT tyyppi FROM sopimus WHERE sopimus_id = $1",
-                [$sopimusId]
-            );
-            $contract = fetchOne($checkResult);
+            $createdInvoice = null;
+            executeQuery('BEGIN');
+            try {
+                // Sarjoitetaan laskunumeron käyttö, jotta rinnakkaiset käyttäjät eivät luo samaa numeroa.
+                executeQuery("SELECT pg_advisory_xact_lock(54001)");
 
-            if (!$contract || $contract['tyyppi'] !== 'tuntityö') {
-                $error = 'Vain tuntityo-sopimukset voidaan laskuttaa.';
-            } else {
+                $checkResult = executeQuery(
+                    "SELECT tyyppi
+                     FROM sopimus
+                     WHERE sopimus_id = $1
+                     FOR UPDATE",
+                    [(int) $sopimusId]
+                );
+                $contract = fetchOne($checkResult);
+
+                if (!$contract || $contract['tyyppi'] !== 'tuntityö') {
+                    throw new Exception('Vain tuntityo-sopimukset voidaan laskuttaa.');
+                }
+
+                $duplicateCheck = executeQuery(
+                    "SELECT lasku_id
+                     FROM lasku
+                     WHERE laskun_nro = $1
+                     LIMIT 1",
+                    [(int) $laskuNro]
+                );
+                if (fetchOne($duplicateCheck)) {
+                    throw new Exception('Annettu laskunumero on jo käytössä.');
+                }
+
                 $viitenumero = str_pad((string) $laskuNro, 5, '0', STR_PAD_LEFT);
                 $erapaiva = date('Y-m-d', strtotime($pvm . ' +14 days'));
                 $insertResult = executeQuery(
                     "INSERT INTO lasku (sopimus_id, laskun_nro, muistutus_nro, pvm, erapaiva, viitenumero)
                      VALUES ($1, $2, 0, $3, $4, $5)
                      RETURNING lasku_id",
-                    [$sopimusId, $laskuNro, $pvm, $erapaiva, $viitenumero]
+                    [(int) $sopimusId, (int) $laskuNro, $pvm, $erapaiva, $viitenumero]
                 );
                 $createdInvoice = fetchOne($insertResult);
 
-                if ($createdInvoice) {
-                    $queryString = http_build_query([
-                        'tyokohde_id' => $tyokohdeId,
-                        'sopimus_id' => $sopimusId,
-                        'invoice_id' => $createdInvoice['lasku_id'],
-                        'message' => 'Lasku ' . $createdInvoice['lasku_id'] . ' luotiin luonnoksena. Voit nyt muodostaa PDF-esikatselun.'
-                    ]);
-                    header('Location: lasku.php?' . $queryString);
-                    exit;
+                if (!$createdInvoice) {
+                    throw new Exception('Virhe laskun luonnissa.');
                 }
 
-                $error = 'Virhe laskun luonnissa.';
+                executeQuery('COMMIT');
+            } catch (Exception $e) {
+                executeQuery('ROLLBACK');
+                $error = $e->getMessage();
+            }
+
+            if ($createdInvoice) {
+                $queryString = http_build_query([
+                    'tyokohde_id' => $tyokohdeId,
+                    'sopimus_id' => $sopimusId,
+                    'invoice_id' => $createdInvoice['lasku_id'],
+                    'message' => 'Lasku ' . $createdInvoice['lasku_id'] . ' luotiin luonnoksena. Voit nyt muodostaa PDF-esikatselun.'
+                ]);
+                header('Location: lasku.php?' . $queryString);
+                exit;
+            }
+        }
+    }
+
+    if ($action === 'create_urakka_invoices') {
+        $sopimusId = $_POST['sopimus_id'] ?? null;
+        $tyokohdeId = $_POST['tyokohde_id'] ?? null;
+        $startingInvoiceNumber = $_POST['starting_invoice_number'] ?? null;
+        $installmentCount = (int) ($_POST['installment_count'] ?? 1);
+        $todayIso = date('Y-m-d');
+
+        $allowedInstallments = [1, 2, 4];
+        if (!$sopimusId || !$startingInvoiceNumber || !in_array($installmentCount, $allowedInstallments, true)) {
+            $error = 'Urakkalaskutuksen tiedot ovat puutteelliset.';
+        } elseif (!ctype_digit((string) $sopimusId) || !ctype_digit((string) $startingInvoiceNumber)) {
+            $error = 'Virheellinen sopimus tai laskunumero.';
+        } else {
+            $sendDates = [];
+            for ($i = 1; $i <= $installmentCount; $i++) {
+                $dateValue = trim((string) ($_POST['send_date_' . $i] ?? ''));
+                if ($dateValue === '') {
+                    $error = 'Anna lähetyspäivä kaikille erille.';
+                    break;
+                }
+                if ($dateValue < $todayIso) {
+                    $error = 'Lähetyspäivä ei voi olla menneisyydessä.';
+                    break;
+                }
+                $sendDates[] = $dateValue;
+            }
+
+            if ($error === '') {
+                for ($i = 1; $i < count($sendDates); $i++) {
+                    if ($sendDates[$i] < $sendDates[$i - 1]) {
+                        $error = 'Erien lähetyspäivät pitää syöttää nousevassa järjestyksessä.';
+                        break;
+                    }
+                }
+            }
+
+            if ($error === '') {
+                $start = (int) $startingInvoiceNumber;
+                if ($start <= 0) {
+                    $error = 'Laskunumeron tulee olla positiivinen.';
+                }
+
+                $numbersToUse = [];
+                if ($error === '') {
+                    for ($i = 0; $i < $installmentCount; $i++) {
+                        $numbersToUse[] = $start + $i;
+                    }
+
+                    $firstInvoiceId = null;
+                    $previousInvoiceId = null;
+
+                    executeQuery('BEGIN');
+                    try {
+                        // Sarjoitetaan erälaskujen numerointi rinnakkaiskäytössä.
+                        executeQuery("SELECT pg_advisory_xact_lock(54001)");
+
+                        $checkResult = executeQuery(
+                            "SELECT tyyppi
+                             FROM sopimus
+                             WHERE sopimus_id = $1
+                             FOR UPDATE",
+                            [(int) $sopimusId]
+                        );
+                        $contract = fetchOne($checkResult);
+
+                        if (!$contract || $contract['tyyppi'] !== 'urakka') {
+                            throw new Exception('Vain urakkasopimukset voidaan jakaa erälaskutukseen.');
+                        }
+
+                        $existingNumbers = executeQuery(
+                            "SELECT laskun_nro
+                             FROM lasku
+                             WHERE laskun_nro = ANY($1::int[])",
+                            ['{' . implode(',', $numbersToUse) . '}']
+                        );
+                        $duplicates = fetchAll($existingNumbers);
+                        if (!empty($duplicates)) {
+                            throw new Exception('Vähintään yksi annetuista laskunumeroista on jo käytössä.');
+                        }
+
+                        for ($i = 0; $i < $installmentCount; $i++) {
+                            $invoiceNumber = $numbersToUse[$i];
+                            $sendDate = $sendDates[$i];
+                            $dueDate = date('Y-m-d', strtotime($sendDate . ' +14 days'));
+                            $reference = str_pad((string) $invoiceNumber, 5, '0', STR_PAD_LEFT);
+
+                            if ($previousInvoiceId) {
+                                $insertResult = executeQuery(
+                                    "INSERT INTO lasku (sopimus_id, laskun_nro, muistutus_nro, pvm, erapaiva, viitenumero, edellinen_lasku_id)
+                                     VALUES ($1, $2, 0, $3, $4, $5, $6)
+                                     RETURNING lasku_id",
+                                    [(int) $sopimusId, (int) $invoiceNumber, $sendDate, $dueDate, $reference, $previousInvoiceId]
+                                );
+                            } else {
+                                $insertResult = executeQuery(
+                                    "INSERT INTO lasku (sopimus_id, laskun_nro, muistutus_nro, pvm, erapaiva, viitenumero)
+                                     VALUES ($1, $2, 0, $3, $4, $5)
+                                     RETURNING lasku_id",
+                                    [(int) $sopimusId, (int) $invoiceNumber, $sendDate, $dueDate, $reference]
+                                );
+                            }
+                            $createdInvoice = fetchOne($insertResult);
+
+                            if ($firstInvoiceId === null && $createdInvoice) {
+                                $firstInvoiceId = $createdInvoice['lasku_id'];
+                            }
+
+                            if ($createdInvoice && !empty($createdInvoice['lasku_id'])) {
+                                $previousInvoiceId = $createdInvoice['lasku_id'];
+                            }
+                        }
+
+                        executeQuery('COMMIT');
+                    } catch (Exception $e) {
+                        executeQuery('ROLLBACK');
+                        $error = $e->getMessage();
+                    }
+
+                    if ($error === '' && $firstInvoiceId !== null) {
+                        $queryString = http_build_query([
+                            'tyokohde_id' => $tyokohdeId,
+                            'sopimus_id' => $sopimusId,
+                            'invoice_id' => $firstInvoiceId,
+                            'message' => 'Urakkalaskutus luotu ' . $installmentCount . ' erässä.'
+                        ]);
+                        header('Location: lasku.php?' . $queryString);
+                        exit;
+                    }
+                }
             }
         }
     }
@@ -918,13 +1172,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($valittu_tyokohde) {
     $sopimukset = loadContracts($valittu_tyokohde);
+
+    if (empty($sopimukset)) {
+        $error = 'Kyseiselle kohteelle ei ole aktiivista sopimusta';
+    }
 }
 
 if ($valittu_sopimus) {
     $sopimus_data = loadContractDetails($valittu_sopimus);
-    $tuntityot = loadWorkSummary($valittu_sopimus);
-    $tarvikkeet = loadMaterialSummary($valittu_sopimus);
-    $summat = getContractTotalsFromRows($tuntityot, $tarvikkeet);
+    if ($sopimus_data && ($sopimus_data['tyyppi'] ?? '') === 'urakka') {
+        $tuntityot = [];
+        $tarvikkeet = [];
+        $urakkaTyoNetto = (float) ($sopimus_data['urakka_tyo_netto'] ?? 0);
+        $urakkaTarvikeNetto = (float) ($sopimus_data['urakka_tarvikkeet_netto'] ?? 0);
+        $summat = [
+            'tyo_netto' => $urakkaTyoNetto,
+            'tarvike_netto' => $urakkaTarvikeNetto,
+            'tyo_netto_ilman_alennusta' => $urakkaTyoNetto,
+            'tarvike_netto_ilman_alennusta' => $urakkaTarvikeNetto,
+            'alennus_summa' => 0.0
+        ];
+    } else {
+        $tuntityot = loadWorkSummary($valittu_sopimus);
+        $tarvikkeet = loadMaterialSummary($valittu_sopimus);
+        $summat = getContractTotalsFromRows($tuntityot, $tarvikkeet);
+    }
     $laskut = loadContractInvoices($valittu_sopimus);
 }
 
@@ -935,6 +1207,7 @@ if ($valittu_lasku) {
 
 $oletusLahetysPvm = date('Y-m-d');
 $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
+$oletusLaskunNro = getNextInvoiceNumber();
 ?>
 
 <!DOCTYPE html>
@@ -942,31 +1215,37 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luo tuntityolasku</title>
+    <title>Luo lasku</title>
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>Tmi Sahkotarsky</h1>
-                <p>Laskutusjarjestelma</p>
+        <nav class="navbar"> <div class="nav-content">
+            <div class="brand">
+                <h1>Tmi Sähkötärsky</h1>
+                <span>Laskutusjärjestelmä</span>
             </div>
-        </header>
-
-        <nav class="navbar">
             <ul>
-                <li><a href="index.php">Etusivu</a></li>
-                <li><a href="add_worksite.php">Lisaa tyokohde</a></li>
-                <li><a href="add_event.php">Lisaa tapahtuma</a></li>
-                <li><a href="generate_estimate.php">Hinta-arvio</a></li>
-                <li><a href="lasku.php" class="active">Luo lasku</a></li>
-                <li><a href="view_data.php">Nayta tiedot</a></li>
+                <li><a href="index.php">
+                <i class="fa-solid fa-house"></i>Etusivu</a></li>
+                <li><a href="lisaa_tyokohde.php">
+                <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
+                <li><a href="lisaa_tapahtuma.php">
+                <i class="fa-solid fa-hammer"></i>Lisää tapahtuma</a></li>
+                <li><a href="hinta_arvio.php">
+                <i class="fa-solid fa-calculator"></i>Hinta-arvio</a></li>
+                <li><a href="lasku.php" class="active">
+                <i class="fa-solid fa-file-invoice"></i>Luo lasku</a></li>
+                <li><a href="nayta_tiedot.php">
+                <i class="fa-solid fa-database"></i>Näytä tiedot</a></li>
             </ul>
+        </div>
         </nav>
 
         <main>
-            <h2>Luo tuntityolasku</h2>
+            <h2>Luo lasku</h2>
 
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo escapeInput($message); ?></div>
@@ -977,13 +1256,13 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
             <?php endif; ?>
 
             <div class="form-container">
-                <h3>1. Valitse tyokohde</h3>
+                <h3>1. Valitse työkohde</h3>
                 <form method="POST" action="">
                     <input type="hidden" name="action" value="select_worksite">
                     <div class="form-group">
-                        <label for="tyokohde_id">Mista kohteesta haluat luoda tuntityolaskun?</label>
+                        <label for="tyokohde_id">Mistä kohteesta haluat luoda tuntityölaskun?</label>
                         <select name="tyokohde_id" id="tyokohde_id" onchange="this.form.submit()" required>
-                            <option value="">-- Valitse tyokohde --</option>
+                            <option value="">-- Valitse työkohde --</option>
                             <?php foreach ($tyokohteet as $kohde): ?>
                                 <option value="<?php echo escapeInput((string) $kohde['tyokohde_id']); ?>" <?php echo ((string) $valittu_tyokohde === (string) $kohde['tyokohde_id']) ? 'selected' : ''; ?>>
                                     <?php echo escapeInput($kohde['kohde_osoite']); ?>
@@ -1007,7 +1286,7 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                                     <th>Tyyppi</th>
                                     <th>Tila</th>
                                     <th>Pvm</th>
-                                    <th>Urakka tyo netto</th>
+                                    <th>Urakka työ netto</th>
                                     <th>Urakka tarvikkeet netto</th>
                                     <th></th>
                                 </tr>
@@ -1041,11 +1320,21 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                         <p><strong>Sopimustyyppi:</strong> <?php echo escapeInput($sopimus_data['tyyppi']); ?></p>
                         <p><strong>Sopimuksen tila:</strong> <?php echo escapeInput($sopimus_data['tila']); ?></p>
                         <p><strong>Sopimuksen pvm:</strong> <?php echo escapeInput(formatDateFi($sopimus_data['pvm'])); ?></p>
+                        <?php if (($sopimus_data['tyyppi'] ?? '') === 'urakka'): ?>
+                            <?php
+                                $urakkaTyo = (float) ($sopimus_data['urakka_tyo_netto'] ?? 0);
+                                $urakkaTarvikkeet = (float) ($sopimus_data['urakka_tarvikkeet_netto'] ?? 0);
+                                $urakkaYhteensa = $urakkaTyo + $urakkaTarvikkeet;
+                            ?>
+                            <p><strong>Urakkasopimuksen työosuus (netto):</strong> <?php echo formatCurrency($urakkaTyo); ?></p>
+                            <p><strong>Urakkasopimuksen tarvikkeet (netto):</strong> <?php echo formatCurrency($urakkaTarvikkeet); ?></p>
+                            <p><strong>Urakkasopimuksen yhteensä (netto):</strong> <?php echo formatCurrency($urakkaYhteensa); ?></p>
+                        <?php endif; ?>
                         <p><strong>Asiakkaan yhteystiedot:</strong></p>
                         <p>Nimi: <?php echo escapeInput($sopimus_data['as_nimi']); ?></p>
                         <p>Osoite: <?php echo escapeInput($sopimus_data['as_osoite']); ?></p>
                         <p>Puhelin: <?php echo escapeInput($sopimus_data['puh_nro']); ?></p>
-                        <p>Sahkoposti: <?php echo escapeInput($sopimus_data['sahkoposti']); ?></p>
+                        <p>Sähkoposti: <?php echo escapeInput($sopimus_data['sahkoposti']); ?></p>
                     </div>
 
                     <form method="POST" action="">
@@ -1054,12 +1343,12 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                         <input type="hidden" name="sopimus_id" value="<?php echo escapeInput((string) $valittu_sopimus); ?>">
 
                     <?php if (!empty($tuntityot)): ?>
-                        <h4>Tuntityoerittely</h4>
+                        <h4>Tuntityöerittely</h4>
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Tyo</th>
-                                    <th>Maara</th>
+                                    <th>Työ</th>
+                                    <th>Määrä</th>
                                     <th>Alennusprosentti</th>
                                     <th>Netto</th>
                                 </tr>
@@ -1092,9 +1381,9 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                             <thead>
                                 <tr>
                                     <th>Tarvike</th>
-                                    <th>Yksikko</th>
-                                    <th>Yksikkohinta</th>
-                                    <th>Maara</th>
+                                    <th>Yksikkö</th>
+                                    <th>Yksikköhinta</th>
+                                    <th>Määrä</th>
                                     <th>Alennusprosentti</th>
                                     <th>Netto</th>
                                 </tr>
@@ -1137,13 +1426,13 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                                 $kokonaisIlmanAlennusta = (float) $summat['tyo_netto_ilman_alennusta'] + (float) $summat['tarvike_netto_ilman_alennusta'];
                                 $kotitalousvahennys = ($tyoNetto * 1.24) * 0.35;
                             ?>
-                            <p><strong>Tyon osuus yhteensa:</strong> <?php echo formatCurrency($tyoNetto); ?></p>
-                            <p><strong>Tarvikkeiden osuus yhteensa:</strong> <?php echo formatCurrency($tarvikeNetto); ?></p>
-                            <p><strong>Yhteensa netto:</strong> <?php echo formatCurrency($kokonaisNetto); ?></p>
+                            <p><strong>Tyon osuus yhteensä:</strong> <?php echo formatCurrency($tyoNetto); ?></p>
+                            <p><strong>Tarvikkeiden osuus yhteensä:</strong> <?php echo formatCurrency($tarvikeNetto); ?></p>
+                            <p><strong>Yhteensä netto:</strong> <?php echo formatCurrency($kokonaisNetto); ?></p>
                             <p><strong>Hinta ilman alennuksia:</strong> <?php echo formatCurrency($kokonaisIlmanAlennusta); ?></p>
                             <p><strong>Hinta alennusten jalkeen:</strong> <?php echo formatCurrency($kokonaisNetto); ?></p>
                             <p><strong>Alennusten vaikutus:</strong> <?php echo formatCurrency((float) $summat['alennus_summa']); ?></p>
-                            <p><strong>Kotitalousvahennykseen kelpaava osuus (35 % tyon verollisesta osuudesta):</strong> <?php echo formatCurrency($kotitalousvahennys); ?></p>
+                            <p><strong>Kotitalousvähennykseen kelpaava osuus (35 % tyon verollisesta osuudesta):</strong> <?php echo formatCurrency($kotitalousvahennys); ?></p>
                             <p><a href="https://www.vero.fi/henkiloasiakkaat/vahennykset/kotitalousvahennys/kotitalousvahennyksen-maara/" target="_blank" rel="noopener noreferrer">Lue lisaa vero.fi: kotitalousvahennyksen maara</a></p>
                         </div>
                     <?php endif; ?>
@@ -1151,29 +1440,74 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
 
                 <div class="form-container">
                     <h3>4. Luo laskuluonnos</h3>
-                    <form method="POST" action="" class="invoice-create-form">
-                        <input type="hidden" name="action" value="create_invoice">
-                        <input type="hidden" name="tyokohde_id" value="<?php echo escapeInput((string) $valittu_tyokohde); ?>">
-                        <input type="hidden" name="sopimus_id" value="<?php echo escapeInput((string) $valittu_sopimus); ?>">
+                    <?php if (($sopimus_data['tyyppi'] ?? '') === 'urakka'): ?>
+                        <form method="POST" action="" class="invoice-create-form" id="urakka-installment-form">
+                            <input type="hidden" name="action" value="create_urakka_invoices">
+                            <input type="hidden" name="tyokohde_id" value="<?php echo escapeInput((string) $valittu_tyokohde); ?>">
+                            <input type="hidden" name="sopimus_id" value="<?php echo escapeInput((string) $valittu_sopimus); ?>">
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="lasku_nro">Laskunumero</label>
-                                <input type="number" name="lasku_nro" id="lasku_nro" min="1" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="starting_invoice_number">Aloituslaskunumero</label>
+                                    <input type="number" name="starting_invoice_number" id="starting_invoice_number" min="1" value="<?php echo escapeInput((string) $oletusLaskunNro); ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="installment_count">Erien määrä</label>
+                                    <select name="installment_count" id="installment_count" required>
+                                        <option value="1" selected>1 erä</option>
+                                        <option value="2">2 erää</option>
+                                        <option value="4">4 erää</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="pvm">Lahetyspaiva</label>
-                                <input type="date" name="pvm" id="pvm" value="<?php echo escapeInput($oletusLahetysPvm); ?>" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="erapaiva_preview">Erapaiva</label>
-                                <input type="date" id="erapaiva_preview" value="<?php echo escapeInput($oletusEraPvm); ?>" readonly>
-                            </div>
-                        </div>
 
-                        <p class="help-text">Erapaiva lasketaan automaattisesti 14 paivaa lahetyspaivasta. Lasku luodaan ensin luonnoksena, jonka jalkeen voit muodostaa PDF-esikatselun.</p>
-                        <button type="submit" class="btn btn-primary">Luo laskuluonnos</button>
-                    </form>
+                            <div class="form-row" id="installment_dates">
+                                <div class="form-group installment-date" data-installment="1">
+                                    <label for="send_date_1">Erä 1 lähetyspäivä</label>
+                                    <input type="date" name="send_date_1" id="send_date_1" min="<?php echo escapeInput($oletusLahetysPvm); ?>" value="<?php echo escapeInput($oletusLahetysPvm); ?>" required>
+                                </div>
+                                <div class="form-group installment-date" data-installment="2" style="display:none;">
+                                    <label for="send_date_2">Erä 2 lähetyspäivä</label>
+                                    <input type="date" name="send_date_2" id="send_date_2" min="<?php echo escapeInput($oletusLahetysPvm); ?>" value="<?php echo escapeInput($oletusLahetysPvm); ?>">
+                                </div>
+                                <div class="form-group installment-date" data-installment="3" style="display:none;">
+                                    <label for="send_date_3">Erä 3 lähetyspäivä</label>
+                                    <input type="date" name="send_date_3" id="send_date_3" min="<?php echo escapeInput($oletusLahetysPvm); ?>" value="<?php echo escapeInput($oletusLahetysPvm); ?>">
+                                </div>
+                                <div class="form-group installment-date" data-installment="4" style="display:none;">
+                                    <label for="send_date_4">Erä 4 lähetyspäivä</label>
+                                    <input type="date" name="send_date_4" id="send_date_4" min="<?php echo escapeInput($oletusLahetysPvm); ?>" value="<?php echo escapeInput($oletusLahetysPvm); ?>">
+                                </div>
+                            </div>
+
+                            <p class="help-text">Valitse 1, 2 tai 4 erää. Jokainen lähetyspäivä voi olla tästä päivästä eteenpäin, mutta ei menneisyydessä.</p>
+                            <button type="submit" class="btn btn-primary">Luo urakkalaskutus eriin</button>
+                        </form>
+                    <?php else: ?>
+                        <form method="POST" action="" class="invoice-create-form">
+                            <input type="hidden" name="action" value="create_invoice">
+                            <input type="hidden" name="tyokohde_id" value="<?php echo escapeInput((string) $valittu_tyokohde); ?>">
+                            <input type="hidden" name="sopimus_id" value="<?php echo escapeInput((string) $valittu_sopimus); ?>">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="lasku_nro">Laskunumero</label>
+                                    <input type="number" name="lasku_nro" id="lasku_nro" min="1" value="<?php echo escapeInput((string) $oletusLaskunNro); ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pvm">Lähetyspäivä</label>
+                                    <input type="date" name="pvm" id="pvm" min="<?php echo escapeInput($oletusLahetysPvm); ?>" value="<?php echo escapeInput($oletusLahetysPvm); ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="erapaiva_preview">Erapäivä</label>
+                                    <input type="date" id="erapaiva_preview" value="<?php echo escapeInput($oletusEraPvm); ?>" readonly>
+                                </div>
+                            </div>
+
+                            <p class="help-text">Erapäivä lasketaan automaattisesti 14 päivää lähetyspäivästä. Lähetyspäivä voi olla tänään tai tulevaisuudessa.</p>
+                            <button type="submit" class="btn btn-primary">Luo laskuluonnos</button>
+                        </form>
+                    <?php endif; ?>
                 </div>
 
                 <?php if (!empty($laskut)): ?>
@@ -1184,9 +1518,9 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                                 <tr>
                                     <th>Lasku ID</th>
                                     <th>Laskunumero</th>
-                                    <th>Lahetyspaiva</th>
-                                    <th>Erapaiva</th>
-                                    <th>Maksu pvm</th>
+                                    <th>Lähetyspäivä</th>
+                                    <th>Eräpäivä</th>
+                                    <th>Maksupäivä</th>
                                     <th>PDF</th>
                                 </tr>
                             </thead>
@@ -1215,8 +1549,8 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
                         <h3>Valittu laskuluonnos</h3>
                         <p><strong>Lasku ID:</strong> <?php echo escapeInput((string) $valittu_lasku_data['lasku_id']); ?></p>
                         <p><strong>Tiedoston oletusnimi:</strong> <?php echo escapeInput($valittu_lasku_data['sopimus_id'] . '_' . $valittu_lasku_data['lasku_id'] . '_' . $valittu_lasku_data['pvm']); ?></p>
-                        <p><strong>Lahetyspaiva:</strong> <?php echo escapeInput(formatDateFi($valittu_lasku_data['pvm'])); ?></p>
-                        <p><strong>Erapaiva:</strong> <?php echo escapeInput(formatDateFi($valittu_lasku_data['erapaiva'])); ?></p>
+                        <p><strong>Lähetyspäivä:</strong> <?php echo escapeInput(formatDateFi($valittu_lasku_data['pvm'])); ?></p>
+                        <p><strong>Erapäivä:</strong> <?php echo escapeInput(formatDateFi($valittu_lasku_data['erapaiva'])); ?></p>
                         <p><strong>Viitenumero:</strong> <?php echo escapeInput((string) $valittu_lasku_data['viitenumero']); ?></p>
                         <div class="action-row top-gap">
                             <a class="btn btn-primary" href="lasku.php?preview_invoice_id=<?php echo urlencode((string) $valittu_lasku_data['lasku_id']); ?>" target="_blank">Avaa PDF-esikatselu</a>
@@ -1228,13 +1562,14 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
         </main>
 
         <footer>
-            <p>&copy; 2026 Tmi Sahkotarsky - Laskutusjarjestelma</p>
+            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä</p>
         </footer>
     </div>
 
     <script>
         const sendDateInput = document.getElementById('pvm');
         const dueDatePreview = document.getElementById('erapaiva_preview');
+        const installmentCountSelect = document.getElementById('installment_count');
 
         function updateDueDate() {
             if (!sendDateInput || !dueDatePreview || !sendDateInput.value) {
@@ -1256,6 +1591,37 @@ $oletusEraPvm = date('Y-m-d', strtotime($oletusLahetysPvm . ' +14 days'));
         if (sendDateInput) {
             sendDateInput.addEventListener('change', updateDueDate);
             updateDueDate();
+        }
+
+        function updateInstallmentFields() {
+            if (!installmentCountSelect) {
+                return;
+            }
+
+            const count = parseInt(installmentCountSelect.value, 10);
+            const installmentFields = document.querySelectorAll('.installment-date');
+
+            installmentFields.forEach((field) => {
+                const index = parseInt(field.getAttribute('data-installment'), 10);
+                const input = field.querySelector('input');
+
+                if (index <= count) {
+                    field.style.display = '';
+                    if (input) {
+                        input.required = true;
+                    }
+                } else {
+                    field.style.display = 'none';
+                    if (input) {
+                        input.required = false;
+                    }
+                }
+            });
+        }
+
+        if (installmentCountSelect) {
+            installmentCountSelect.addEventListener('change', updateInstallmentFields);
+            updateInstallmentFields();
         }
     </script>
 </body>

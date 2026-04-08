@@ -258,3 +258,39 @@ COMMENT ON VIEW toimitetut_tavarat_per_toimittaja IS 'Raporttia R6 varten. Näyt
 COMMENT ON VIEW sopimus_summat IS 'Laskee jokaiselle sopimukselle työnsumman ja tarvikkeiden summan nettona.';
 COMMENT ON VIEW lasku_data IS 'Käyttää sopimus_summat-näkymää, lisää siihen alv:n, asiakkaan tiedot ja yrityksen tiedot.';
 COMMENT ON VIEW asiakkaan_status IS 'Laskee asiakkaan maksuhäiriöt triggeriä vasten.';
+
+
+
+
+
+
+
+
+-- Odottavat sopimukset, joista yrityksen edustaja voi tehdä hyväksynnän ennen laskutusta.
+CREATE OR REPLACE VIEW odottavat_sopimukset AS
+SELECT
+    s.sopimus_id,
+    s.tyokohde_id,
+    s.tyyppi,
+    s.tila,
+    s.pvm,
+    tk.asiakas_id,
+    a.as_nimi,
+    a.as_osoite,
+    a.puh_nro,
+    a.sahkoposti,
+    tk.kohde_osoite,
+    ROUND(COALESCE(s.urakka_tyo_netto, ut.tyon_osuus_netto, ss.tyon_summa_netto, 0), 2) AS tyon_osuus_netto,
+    ROUND(COALESCE(s.urakka_tarvikkeet_netto, ut.tarvikkeet_osuus_netto, ss.tarvikkeet_summa_netto, 0), 2) AS tarvikkeet_osuus_netto,
+    ROUND((
+        COALESCE(s.urakka_tyo_netto, ut.tyon_osuus_netto, ss.tyon_summa_netto, 0)
+        + COALESCE(s.urakka_tarvikkeet_netto, ut.tarvikkeet_osuus_netto, ss.tarvikkeet_summa_netto, 0)
+    ), 2) AS yhteensa_netto
+FROM sopimus s
+LEFT JOIN tyokohde tk ON tk.tyokohde_id = s.tyokohde_id
+LEFT JOIN asiakas a ON a.asiakas_id = tk.asiakas_id
+LEFT JOIN urakka_tarjous ut ON ut.sopimus_id = s.sopimus_id
+LEFT JOIN sopimus_summat ss ON ss.sopimus_id = s.sopimus_id
+WHERE s.tila = 'odottaa_hyväksyntää';
+
+COMMENT ON VIEW odottavat_sopimukset IS 'Listaa hyväksyntää odottavat sopimukset asiakkaan, työkohteen ja hintojen kanssa.';
