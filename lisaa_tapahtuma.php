@@ -222,7 +222,7 @@ if (isset($_POST['tallenna'])) {
         paivitaLista();
     }
 
-      function lisaaTarvike() {
+    function lisaaTarvike() {
         const tarvike = document.querySelector('[name="tarvike_id"]');
         const tarvike_id = tarvike.value;
         const tarvike_nimi = tarvike.options[tarvike.selectedIndex].text;
@@ -232,6 +232,19 @@ if (isset($_POST['tallenna'])) {
         if (!tarvike_id || maara <= 0) {
             alert("Virheellinen syöte");
             return;
+        }
+
+        const duplikaatti = tarvikkeet.find((el) => el.tarvike_id === tarvike_id);
+
+        if (duplikaatti) {
+          if (duplikaatti.alennus != alennus) {
+            alert("Tarvike syötetty jo listaan");
+            return;
+          } else {
+            duplikaatti.maara =  String(Number(duplikaatti.maara) + Number(maara));
+            paivitaLista();
+            return;
+          }
         }
 
         tarvikkeet.push({
