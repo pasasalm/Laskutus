@@ -33,7 +33,7 @@ if (isset($_POST['tallenna'])) {
                     (sopimus_id, tuntityo_id, maara, pvm, alennusprosentti)
                     VALUES ($1, $2, $3, $4, $5)";
 
-          $res = executeQuery($query, [$sopimus_id, $tuntityo_id, $tunnit, $pvm, $alennus]);
+          $res = pg_query_params($yhteys, $query, [$sopimus_id, $tuntityo_id, $tunnit, $pvm, $alennus]);
 
           if (!$res) {
               throw new Exception("Tuntityön lisäys epäonnistui");
@@ -49,7 +49,7 @@ if (isset($_POST['tallenna'])) {
                         (tarvike_id, sopimus_id, pvm, maara, alennusprosentti)
                         VALUES ($1, $2, $3, $4, $5)";
 
-              $res = executeQuery($query, [
+              $res = pg_query_params($yhteys, $query, [
                   $t['tarvike_id'],
                   $sopimus_id,
                   $pvm,
@@ -68,7 +68,6 @@ if (isset($_POST['tallenna'])) {
       } catch (Exception $e) {
         pg_query($yhteys, "ROLLBACK");
 
-        //error_log($e->getMessage());
         $error_message = "Tallennus epäonnistui: $e";
     }
     }   
@@ -88,16 +87,13 @@ if (isset($_POST['tallenna'])) {
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
+        <nav class="navbar"> <div class="nav-content">
+            <div class="brand">
                 <h1>Tmi Sähkötärsky</h1>
-                <p>Laskutusjärjestelmä</p>
+                <span>Laskutusjärjestelmä</span>
             </div>
-        </header>
-
-        <nav class="navbar">
             <ul>
-                <li><a href="index.php"> <!--lisättin ikonit-->
+                <li><a href="index.php">
                 <i class="fa-solid fa-house"></i>Etusivu</a></li>
                 <li><a href="lisaa_tyokohde.php">
                 <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
@@ -105,11 +101,12 @@ if (isset($_POST['tallenna'])) {
                 <i class="fa-solid fa-hammer"></i>Lisää tapahtuma</a></li>
                 <li><a href="hinta_arvio.php">
                 <i class="fa-solid fa-calculator"></i>Hinta-arvio</a></li>
-                <li><a href="file_name3.php">
+                <li><a href="lasku.php">
                 <i class="fa-solid fa-file-invoice"></i>Luo lasku</a></li>
-                <li><a href="file_name4.php">
+                <li><a href="nayta_tiedot.php">
                 <i class="fa-solid fa-database"></i>Näytä tiedot</a></li>
             </ul>
+        </div>
         </nav>
 
         <main class="content">
@@ -154,8 +151,8 @@ if (isset($_POST['tallenna'])) {
                 ?>
               </select>
 
-              <input type="number" step="0.01" name="tunnit" min=0.01 placeholder="Tunnit" required>
-              <input type="number" step="0.01" name="tuntialennus" min=0 placeholder="Alennus %">
+              <input type="number" step="0.5" name="tunnit" min=0.5 placeholder="Tunnit" required>
+              <input type="number" step="0.5" name="tuntialennus" min=0 placeholder="Alennus %">
             </div>
 
             <div class="form-group">
@@ -171,8 +168,8 @@ if (isset($_POST['tallenna'])) {
                       }
                     ?>
                   </select>
-                  <input type="number" step="0.01" name="tarvike_maara" min=0.01 placeholder="Määrä">
-                  <input type="number" step="0.01" name="tarvike_alennus" min=0 placeholder="Alennus %">
+                  <input type="number" step="0.1" name="tarvike_maara" min=0.1 placeholder="Määrä">
+                  <input type="number" step="0.5" name="tarvike_alennus" min=0 placeholder="Alennus %">
                   <input type="hidden" name="tarvikkeet_json" id="tarvikkeet_json">
             </div>
             <button type="button" class="btn btn-secondary" onclick="lisaaTarvike()">Lisää tarvike</button>
@@ -193,7 +190,7 @@ if (isset($_POST['tallenna'])) {
         </main>
 
         <footer>
-            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä | PostgreSQL-tietokanta</p>
+            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä</p>
         </footer>
     </div>
     <script>
@@ -222,7 +219,7 @@ if (isset($_POST['tallenna'])) {
         paivitaLista();
     }
 
-    function lisaaTarvike() {
+      function lisaaTarvike() {
         const tarvike = document.querySelector('[name="tarvike_id"]');
         const tarvike_id = tarvike.value;
         const tarvike_nimi = tarvike.options[tarvike.selectedIndex].text;
@@ -234,11 +231,11 @@ if (isset($_POST['tallenna'])) {
             return;
         }
 
-        const duplikaatti = tarvikkeet.find((el) => el.tarvike_id === tarvike_id);
+	      const duplikaatti = tarvikkeet.find((el) => el.tarvike_id === tarvike_id);
 
         if (duplikaatti) {
           if (duplikaatti.alennus != alennus) {
-            alert("Tarvike syötetty jo listaan");
+            alert("Tarvike sy�tetty jo listaan");
             return;
           } else {
             duplikaatti.maara =  String(Number(duplikaatti.maara) + Number(maara));

@@ -8,22 +8,20 @@ include 'config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tmi Sähkötärsky - Laskutusjärjestelmä</title>
-<link rel="stylesheet" 
+    <link rel="stylesheet" 
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>Tmi Sähkötärsky</h1>
-                <p>Laskutusjärjestelmä</p>
-            </div>
-        </header>
 
-        <nav class="navbar">
+        <nav class="navbar"> <div class="nav-content">
+            <div class="brand">
+                <h1>Tmi Sähkötärsky</h1>
+                <span>Laskutusjärjestelmä</span>
+            </div>
             <ul>
-                <li><a href="index.php" class="active"> <!--lisättin ikonit-->
+                <li><a href="index.php" class="active">
                 <i class="fa-solid fa-house"></i>Etusivu</a></li>
                 <li><a href="lisaa_tyokohde.php">
                 <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
@@ -31,14 +29,45 @@ include 'config.php';
                 <i class="fa-solid fa-hammer"></i>Lisää tapahtuma</a></li>
                 <li><a href="hinta_arvio.php">
                 <i class="fa-solid fa-calculator"></i>Hinta-arvio</a></li>
-                <li><a href="file_name3.php">
+                <li><a href="lasku.php">
                 <i class="fa-solid fa-file-invoice"></i>Luo lasku</a></li>
-                <li><a href="file_name4.php">
+                <li><a href="nayta_tiedot.php">
                 <i class="fa-solid fa-database"></i>Näytä tiedot</a></li>
             </ul>
+        </div>
         </nav>
 
         <main class="content">
+            <section class="stats">
+                <h3>Järjestelmän tilastot</h3>
+                <div class="stats-grid">
+                    <?php
+                    $result = executeQuery("SELECT COUNT(*) as count FROM sopimus WHERE tila = 'kesken'");
+                    $row = fetchOne($result);
+                    echo "<div class='stat-box'><h4>Aktiivisia sopimuksia</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
+                    
+                    $result = executeQuery("SELECT COUNT(*) as count FROM lasku WHERE maksu_pvm IS NULL AND erapaiva < CURRENT_DATE");
+                    $row = fetchOne($result);
+                    echo "<div class='stat-box'><h4>Asiakkaiden maksamattomia laskuja</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
+
+                    $result = executeQuery("SELECT COUNT(*) as count FROM tyokohde 
+                    JOIN sopimus ON tyokohde.tyokohde_id = sopimus.tyokohde_id
+                    WHERE sopimus.tila = 'kesken'");
+                    $row = fetchOne($result);
+                    echo "<div class='stat-box'><h4>Aktiivisia työkohteita</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
+
+                    $result = executeQuery("SELECT COUNT(*) as count FROM sopimus
+                    WHERE sopimus.tila = 'odottaa_hyväksyntää'");
+                    $row = fetchOne($result);
+                    echo "<div class='stat-box'><h4>Odottavia sopimuksia</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
+
+                    $result = executeQuery("SELECT tarvike_nimi, varasto FROM tarvikkeet ORDER BY varasto ASC");
+                    $row = fetchOne($result);
+                    $value = number_format($row['varasto'], 0, ',', ' ');
+                    echo "<div class='stat-box'><h4>Varaston vähäisin tarvike</h4><p class='stat-number'>" . $row['tarvike_nimi'] . " (" . $value . ")</p></div>";
+                    ?>
+                </div>
+            </section>
                         
             <div class="dashboard">
                 <div class="card">
@@ -72,34 +101,10 @@ include 'config.php';
                     </ol>
                 </div>
             </div>
-
-            <section class="stats">
-                <h3>Järjestelmän tilastot</h3>
-                <div class="stats-grid">
-                    <?php
-                    // Get statistics
-                    $result = executeQuery("SELECT COUNT(*) as count FROM asiakas");
-                    $row = fetchOne($result);
-                    echo "<div class='stat-box'><h4>Asiakkaita</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
-
-                    $result = executeQuery("SELECT COUNT(*) as count FROM tyokohde");
-                    $row = fetchOne($result);
-                    echo "<div class='stat-box'><h4>Työkohteita</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
-
-                    $result = executeQuery("SELECT COUNT(*) as count FROM sopimus");
-                    $row = fetchOne($result);
-                    echo "<div class='stat-box'><h4>Sopimuksia</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
-
-                    $result = executeQuery("SELECT COUNT(*) as count FROM lasku");
-                    $row = fetchOne($result);
-                    echo "<div class='stat-box'><h4>Laskuja</h4><p class='stat-number'>" . $row['count'] . "</p></div>";
-                    ?>
-                </div>
-            </section>
         </main>
 
         <footer>
-            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä | PostgreSQL-tietokanta</p>
+            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä</p>
         </footer>
     </div>
 </body>
