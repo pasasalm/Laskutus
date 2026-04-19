@@ -18,15 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($address) > 150) {
         $error_message = "Osoite liian pitkä (max 150 merkkiä)";
     } else {
-        $check = executeQuery(
-            "SELECT 1 FROM tyokohde WHERE asiakas_id = $1 AND kohde_osoite = $2",
-            [$client_id, $address]
-        );
+        $check = pg_query_params($yhteys, "SELECT 1 FROM tyokohde WHERE asiakas_id = $1 AND kohde_osoite = $2",
+         array($client_id, $address));
         if (pg_num_rows($check) > 0) {
             $error_message = "Tämä osoite on jo lisätty asiakkaalle";
         } else {
             $query = "INSERT INTO tyokohde (asiakas_id, kohde_osoite) VALUES ($1, $2)";
-            $result = executeQuery($query, array($client_id, $address));
+            $result = pg_query_params($yhteys, $query, array($client_id, $address));
 
             if ($result && (pg_affected_rows($result) > 0)) {
                 $success_message  = "Työkohde lisätty";
@@ -51,30 +49,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
+       <nav class="navbar"> <div class="nav-content">
+            <div class="brand">
                 <h1>Tmi Sähkötärsky</h1>
-                <p>Laskutusjärjestelmä</p>
+                <span>Laskutusjärjestelmä</span>
             </div>
-        </header>
-
-        <nav class="navbar">
             <ul>
-                <li><a href="index.php"> <!--lisättin ikonit-->
+                <li><a href="index.php">
                 <i class="fa-solid fa-house"></i>Etusivu</a></li>
-                <li><a href="lisaa_tyokohde.php" class="active">
+                <li><a href="lisaa_tyokohde.php"  class="active">
                 <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
-                <li><a href="file_name2.php">
+                <li><a href="lisaa_tapahtuma.php">
                 <i class="fa-solid fa-hammer"></i>Lisää tapahtuma</a></li>
                 <li><a href="hinta_arvio.php">
                 <i class="fa-solid fa-calculator"></i>Hinta-arvio</a></li>
-                <li><a href="file_name3.php">
+                <li><a href="lasku.php">
                 <i class="fa-solid fa-file-invoice"></i>Luo lasku</a></li>
-                <li><a href="file_name4.php">
+                <li><a href="nayta_tiedot.php">
                 <i class="fa-solid fa-database"></i>Näytä tiedot</a></li>
             </ul>
+        </div>
         </nav>
     <main class="content">
+
+    <?php if (isset($error_message)): ?>
+    <div id="alert" class="alert alert-error">
+        <?php echo htmlspecialchars($error_message); ?>
+    </div>
+    <?php elseif (isset($success_message)): ?>
+        <div id="alert" class="alert alert-success">
+            <?php echo htmlspecialchars($success_message); ?>
+        </div>
+    <?php endif; ?>
 
     <h2>Lisää työkohde</h2>
 
@@ -100,19 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" class="btn btn-primary">Lisää</button>
     </form>
 
-<?php if (isset($error_message)): ?>
-    <div id="alert" class="alert alert-error">
-        <?php echo htmlspecialchars($error_message); ?>
-    </div>
-<?php elseif (isset($success_message)): ?>
-    <div id="alert" class="alert alert-success">
-        <?php echo htmlspecialchars($success_message); ?>
-    </div>
-<?php endif; ?>
-
 </main>
         <footer>
-            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä | PostgreSQL-tietokanta</p>
+            <p>&copy; 2026 Tmi Sähkötärsky - Laskutusjärjestelmä</p>
         </footer>
     </div>
 </body>
