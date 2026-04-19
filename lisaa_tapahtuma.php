@@ -17,26 +17,32 @@ $supply_list = executeQuery($query_supplies);
 
 if (isset($_POST['tallenna'])) {
 
-    if ( !empty($_POST['sopimus_id']) && !empty($_POST['tuntityo_id']) && !empty($_POST['tunnit']) && !empty($_POST['pvm']) ) {
-
+    if ( !empty($_POST['sopimus_id']) && !empty($_POST['tuntityot_json']) && !empty($_POST['pvm']) ) {
         $sopimus_id = $_POST['sopimus_id'];
-        $tuntityo_id = $_POST['tuntityo_id'];
-        $tunnit = $_POST['tunnit'];
         $pvm = $_POST['pvm'];
-        $alennus = ($_POST['tuntialennus'] === '') ? 0 : $_POST['tuntialennus'];
 
         pg_query($yhteys, "BEGIN");
 
         try {
+          $tuntityot = json_decode($_POST['tuntityot_json'], true);
 
-          $query = "INSERT INTO tyo_suorite 
+          foreach ($tuntityot as $t) {
+
+            $query = "INSERT INTO tyo_suorite 
                     (sopimus_id, tuntityo_id, maara, pvm, alennusprosentti)
                     VALUES ($1, $2, $3, $4, $5)";
 
-          $res = pg_query_params($yhteys, $query, [$sopimus_id, $tuntityo_id, $tunnit, $pvm, $alennus]);
+            $res = pg_query_params($yhteys, $query, [
+                $sopimus_id,
+                $t['tuntityo_id'],
+                $t['tunnit'],
+                $pvm,
+                $t['alennus']
+            ]);
 
-          if (!$res) {
-              throw new Exception("Tuntityön lisäys epäonnistui");
+            if (!$res) {
+                throw new Exception("Tuntityön lisäys epäonnistui");
+            }
           }
 
           if (!empty($_POST['tarvikkeet_json'])) {
@@ -127,7 +133,7 @@ if (isset($_POST['tallenna'])) {
             <div class="form-group">
               <label>Sopimus *</label>
               <select name="sopimus_id" required>
-                <option value="" disabled selected>Valitse sopimus</option>
+                <option value="" disabled selected>Valitse tuntityösopimus</option>
                 <?php
                   while ($row = pg_fetch_assoc($contract_list)) {
                           $id = $row['sopimus_id'];
@@ -153,6 +159,12 @@ if (isset($_POST['tallenna'])) {
 
               <input type="number" step="0.5" name="tunnit" min=0.5 placeholder="Tunnit" required>
               <input type="number" step="0.5" name="tuntialennus" min=0 placeholder="Alennus %">
+              <input type="hidden" name="tuntityot_json" id="tuntityot_json">
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="lisaaTyo()">Lisää työ</button>
+            
+            <div class="info-section">
+              <ul id="tuntityolista"></ul>
             </div>
 
             <div class="form-group">
@@ -175,7 +187,7 @@ if (isset($_POST['tallenna'])) {
             <button type="button" class="btn btn-secondary" onclick="lisaaTarvike()">Lisää tarvike</button>
             
             <div class="info-section">
-              <ul id="lista"></ul>
+              <ul id="tarvikelista"></ul>
             </div>
 
             <div class="form-group">
@@ -194,64 +206,120 @@ if (isset($_POST['tallenna'])) {
         </footer>
     </div>
     <script>
+      let tuntityot = [];
       let tarvikkeet = [];
 
       document.querySelector('form').addEventListener('submit', function() {
+          document.getElementById('tuntityot_json').value = JSON.stringify(tuntityot);
           document.getElementById('tarvikkeet_json').value = JSON.stringify(tarvikkeet);
       });
 
-      function paivitaLista() {
-        const ul = document.getElementById('lista');
+    function paivitaTyoLista() {
+        const ul = document.getElementById('tuntityolista');
+        ul.innerHTML = '';
+
+        tuntityot.forEach((t, i) => {
+            ul.innerHTML += `
+                <li>
+                    ${t.tuntityo_nimi} | ${t.tunnit} tuntia | Alennus ${t.alennus} %
+                    <button onclick="poistaTyo(${i})">Poista</button>
+                </li>
+            `;
+        });
+    }
+
+    function poistaTyo(index) {
+        tuntityot.splice(index, 1);
+        paivitaTyoLista();
+    }
+
+    function lisaaTyo() {
+      const tuntityo = document.querySelector('[name="tuntityo_id"]');
+      const tuntityo_id = tuntityo.value;
+      const tuntityo_nimi = tuntityo.options[tuntityo.selectedIndex].text;
+      const tunnit = document.querySelector('[name="tunnit"]').value;
+      const alennus = document.querySelector('[name="tuntialennus"]').value || 0;
+
+      if (!tuntityo_id || tunnit <= 0) {
+          alert("Virheellinen syöte");
+          return;
+      }
+
+      const duplikaatti = tuntityot.find((el) => el.tuntityo_id === tuntityo_id);
+
+      if (duplikaatti) {
+        if (duplikaatti.alennus != alennus) {
+          alert("Tuntityö syötetty jo listaan");
+          return;
+        } else {
+          duplikaatti.tunnit =  String(Number(duplikaatti.tunnit) + Number(tunnit));
+          paivitaTyoLista();
+          return;
+        }
+      }
+
+      tuntityot.push({
+          tuntityo_id,
+          tuntityo_nimi,
+          tunnit,
+          alennus
+      });
+
+      paivitaTyoLista();
+    }
+
+      function paivitaTarvikeLista() {
+        const ul = document.getElementById('tarvikelista');
         ul.innerHTML = '';
 
         tarvikkeet.forEach((t, i) => {
             ul.innerHTML += `
                 <li>
                     ${t.tarvike_nimi} | Määrä ${t.maara} | Alennus ${t.alennus} %
-                    <button onclick="poista(${i})">Poista</button>
+                    <button onclick="poistaTarvike(${i})">Poista</button>
                 </li>
             `;
         });
     }
 
-    function poista(index) {
+    function poistaTarvike(index) {
         tarvikkeet.splice(index, 1);
-        paivitaLista();
+        paivitaTarvikeLista();
     }
 
-      function lisaaTarvike() {
-        const tarvike = document.querySelector('[name="tarvike_id"]');
-        const tarvike_id = tarvike.value;
-        const tarvike_nimi = tarvike.options[tarvike.selectedIndex].text;
-        const maara = document.querySelector('[name="tarvike_maara"]').value;
-        const alennus = document.querySelector('[name="tarvike_alennus"]').value || 0;
+    function lisaaTarvike() {
+      const tarvike = document.querySelector('[name="tarvike_id"]');
+      const tarvike_id = tarvike.value;
+      const tarvike_nimi = tarvike.options[tarvike.selectedIndex].text;
+      const maara = document.querySelector('[name="tarvike_maara"]').value;
+      const alennus = document.querySelector('[name="tarvike_alennus"]').value || 0;
 
-        if (!tarvike_id || maara <= 0) {
-            alert("Virheellinen syöte");
-            return;
+      if (!tarvike_id || maara <= 0) {
+          alert("Virheellinen syöte");
+          return;
+      }
+
+      const duplikaatti = tarvikkeet.find((el) => el.tarvike_id === tarvike_id);
+
+      if (duplikaatti) {
+        if (duplikaatti.alennus != alennus) {
+          alert("Tarvike sy�tetty jo listaan");
+          return;
+        } else {
+          duplikaatti.maara =  String(Number(duplikaatti.maara) + Number(maara));
+          paivitaTarvikeLista();
+          return;
         }
+      }
 
-	      const duplikaatti = tarvikkeet.find((el) => el.tarvike_id === tarvike_id);
+      tarvikkeet.push({
+          tarvike_id,
+          tarvike_nimi,
+          maara,
+          alennus
+      });
 
-        if (duplikaatti) {
-          if (duplikaatti.alennus != alennus) {
-            alert("Tarvike sy�tetty jo listaan");
-            return;
-          } else {
-            duplikaatti.maara =  String(Number(duplikaatti.maara) + Number(maara));
-            paivitaLista();
-            return;
-          }
-        }
-
-        tarvikkeet.push({
-            tarvike_id,
-            tarvike_nimi,
-            maara,
-            alennus
-        });
-
-        paivitaLista();
+      paivitaTarvikeLista();
     }
     </script>
 </body>
