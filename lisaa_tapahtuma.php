@@ -5,7 +5,7 @@ include 'config.php';
 $query_contracts = 
 "SELECT sopimus.sopimus_id, sopimus.tyokohde_id, tyokohde.kohde_osoite 
 FROM laskutus.sopimus JOIN laskutus.tyokohde ON sopimus.tyokohde_id = tyokohde.tyokohde_id 
-WHERE sopimus.tila = 'kesken'";
+WHERE sopimus.tila = 'kesken' AND sopimus.tyyppi = 'tuntityö'";
 $contract_list = executeQuery($query_contracts);
 
 $query_worktypes = "SELECT tuntityo_hinnasto.tuntityo_id, tuntityo_hinnasto.nimi FROM laskutus.tuntityo_hinnasto";
