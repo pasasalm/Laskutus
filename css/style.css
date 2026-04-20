@@ -16,14 +16,13 @@ body {
 }
 
 .container {
-    max-width: 1600px;
-    width: 95%;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     background-color: #fff;
-    box-shadow: 0 0 20px rgba(0,0,0,0.05);
 }
 
 /* ============================================================================
@@ -38,10 +37,10 @@ header {
 }
 
 .header-content {
-    max-width: 1600px;
-    width: 95%;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 3rem;
 }
 
 header h1 {
@@ -58,18 +57,27 @@ header p {
    NAVIGATION
    ============================================================================ */
 .navbar {
-    background-color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 100%;
 }
+
+.nav-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3rem;
+    max-width: 100%;
+}   
 
 .navbar ul {
     list-style: none;
     display: flex;
-    justify-content: center; 
-    max-width: 1200px;
+    justify-content: flex-start; 
+    max-width: 100%;
     margin: 0 auto;         
-    padding: 0;
+    padding: 0 3rem;
     flex-wrap: wrap;       
 }
 
@@ -80,23 +88,45 @@ header p {
 .navbar a {
     display: flex;        
     align-items: center;   
-    gap: 10px;              
-    padding: 1rem 1.5rem;
-    color: #fff;
+    gap: 8px;              
+    padding: 1.2rem 1rem;
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
-    transition: all 0.3s ease;
-    border-bottom: 3px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .navbar a:hover {
-    background-color: #444;
-    color: #667eea;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #333;
 }
 
 .navbar a.active {
-    background-color: #444;
-    border-bottom: 3px solid #667eea;
-    color: #fff;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #333;
+    box-shadow: inset 0 -4px 0 #5d5d5d;
+}
+
+/* ============================================================================
+   BRAND
+   ============================================================================ */
+.brand {
+    color: white;
+    padding: 0.5rem 0;
+}
+
+.brand h1 {
+    font-size: 1.3rem;
+    margin: 0;
+    line-height: 1;
+}
+
+.brand span {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* ============================================================================
@@ -105,8 +135,8 @@ header p {
 
 main {
     flex: 1;
-    padding: 1.5rem;
-    max-width: 1200px;
+    padding: 2rem 3rem;
+    max-width: 100%;
     width: 100%;
     margin: 0 auto;
 }
@@ -134,7 +164,7 @@ main h4 {
 
 main p {
     margin-bottom: 1rem;
-    color: #585858;
+    color: #3b3b3b;
 }
 
 /* ============================================================================
@@ -319,7 +349,6 @@ input[type="email"] {
     margin-bottom: 1.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     border-radius: 4px;
-    overflow: hidden;
 }
 
 .data-table thead,
@@ -331,7 +360,7 @@ input[type="email"] {
 
 .data-table th,
 .estimate-table th,
-.invoice-table th {
+.invoice-table th{
     padding: 1rem;
     text-align: left;
     font-weight: 500;
@@ -350,7 +379,8 @@ input[type="email"] {
 
 .totals-table {
     width: auto;
-    float: right;
+    margin-left: auto;
+    margin-right: 0;
     border-collapse: collapse;
 }
 
@@ -372,6 +402,19 @@ input[type="email"] {
 .total-row {
     background-color: #f0f0f0;
     font-weight: 500;
+}
+
+.table-wrap {
+    width: auto;
+    overflow-x: auto;
+    clear: both;
+    display: block;
+}
+
+.top-gap {
+    margin-top: 2.5rem;
+    display: block;
+    clear: both;
 }
 
 /* ============================================================================
@@ -410,7 +453,7 @@ input[type="email"] {
 
 .card li {
     padding: 0.5rem 0;
-    color: #666;
+    color: #2e2e2e;
 }
 
 .card li strong {
@@ -422,40 +465,39 @@ input[type="email"] {
    ============================================================================ */
 
 .stats {
-    background-color: #f9f9f9;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
+    background: transparent;
+    padding: 0rem;
+    margin: 2rem 0;
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.5rem;
-    margin-top: 1rem;
 }
 
 .stat-box {
-    background-color: white;
+    background-color: #f9f9f9;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 2rem;
+    align-items: center;
+    box-shadow: 0 2px 4x rgba(0,0,0,0.05);
 }
 
 .stat-box h4 {
     margin-top: 0;
-    color: #666;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
+    color: #222;
+    font-size: 1rem;
+    margin-bottom: 0rem;
 }
 
 .stat-number {
-    font-size: 2.5rem;
+    font-size: 1.8rem;
     font-weight: bold;
     color: #667eea;
     margin: 0;
+    line-height: 1.2;
 }
 
 /* ============================================================================
