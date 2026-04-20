@@ -12,10 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!filter_var($client_id, FILTER_VALIDATE_INT)) {
         $error_message = "Virheellinen asiakas";
     }
-
-    if (empty($address)) {
+    elseif (empty($address)) {
         $error_message = "Osoite ei voi olla tyhjä";
-    } elseif (strlen($address) > 150) {
+    } 
+    elseif (strlen($address) > 150) {
         $error_message = "Osoite liian pitkä (max 150 merkkiä)";
     } else {
         $check = pg_query_params($yhteys, "SELECT 1 FROM tyokohde WHERE asiakas_id = $1 AND kohde_osoite = $2",
@@ -76,7 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div id="alert" class="alert alert-error">
         <?php echo htmlspecialchars($error_message); ?>
     </div>
-    <?php elseif (isset($success_message)): ?>
+    <?php endif; ?>
+    <?php if (isset($success_message)): ?>
         <div id="alert" class="alert alert-success">
             <?php echo htmlspecialchars($success_message); ?>
         </div>
