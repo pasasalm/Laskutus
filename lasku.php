@@ -895,7 +895,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tarvikeAlennukset = $_POST['tarvike_alennus'] ?? [];
 
         if (!$sopimusId) {
-            $error = 'Sopimus puuttuu alennusten paivityksesta.';
+            $error = 'Sopimus puuttuu alennusten päivityksestä.';
         } else {
             foreach ($tyoAlennukset as $tuntityoId => $alennus) {
                 $alennusArvo = (float) $alennus;
@@ -967,7 +967,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $todayIso = date('Y-m-d');
 
         if (!$sopimusId || !$laskuNro || !$pvm) {
-            $error = 'Kaikki kentat ovat pakollisia.';
+            $error = 'Kaikki kentät ovat pakollisia.';
         } elseif (!ctype_digit((string) $sopimusId) || !ctype_digit((string) $laskuNro)) {
             $error = 'Virheellinen sopimus tai laskunumero.';
         } elseif ($pvm < $todayIso) {
@@ -1364,7 +1364,7 @@ $oletusLaskunNro = getNextInvoiceNumber();
                                                 name="tyo_alennus[<?php echo escapeInput((string) $tyo['tuntityo_id']); ?>]"
                                                 min="0"
                                                 max="100"
-                                                step="0.01"
+                                                step="0.5"
                                                 value="<?php echo escapeInput(number_format((float) $tyo['alennusprosentti'], 2, '.', '')); ?>"
                                             >
                                         </td>
@@ -1401,7 +1401,7 @@ $oletusLaskunNro = getNextInvoiceNumber();
                                                 name="tarvike_alennus[<?php echo escapeInput((string) $tarvike['tarvike_id']); ?>]"
                                                 min="0"
                                                 max="100"
-                                                step="0.01"
+                                                step="0.5"
                                                 value="<?php echo escapeInput(number_format((float) $tarvike['alennusprosentti'], 2, '.', '')); ?>"
                                             >
                                         </td>

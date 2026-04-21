@@ -391,7 +391,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <td>
                                             <input
                                                 type="number"
-                                                step="1.0"
+                                                step="0.1"
                                                 min="0"
                                                 name="material_qty[<?php echo $material['id']; ?>]"
                                                 value="<?php echo escapeInput($selectedMaterialQty[$material['id']] ?? '0'); ?>"
