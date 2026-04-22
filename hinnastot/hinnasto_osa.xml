@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tarvikkeet [
+<!ELEMENT tarvikkeet (toimittaja,tarvike*)> 
+<!ELEMENT tarvike (ttiedot)> 
+<!ELEMENT ttiedot (id, nimi, merkki, tyyppi, hinta, yksikko)> 
+<!ELEMENT toimittaja (toim_nimi,osoite?)> 
+<!ELEMENT id (#PCDATA)> 
+<!ELEMENT nimi (#PCDATA)> 
+<!ELEMENT merkki (#PCDATA)> 
+<!ELEMENT tyyppi (#PCDATA)> 
+<!ELEMENT hinta (#PCDATA)> 
+<!ELEMENT yksikko (#PCDATA)> 
+<!ELEMENT toim_nimi (#PCDATA)> 
+<!ELEMENT osoite (#PCDATA)>
+]>
+
+<tarvikkeet>
+
+<toimittaja>
+    <toim_nimi>Sähkötukku Oy</toim_nimi>
+    <osoite>Tukkutie 4, 00100 Helsinki</osoite>
+</toimittaja>
+
+<tarvike>
+    <ttiedot>
+        <id>13</id>
+        <nimi>Tarvike1</nimi>
+        <merkki>Merkki1</merkki>
+        <tyyppi>MMJ 3x1,5</tyyppi>
+        <hinta>2.45</hinta>
+        <yksikko>m</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>14</id>
+        <nimi>Tarvike2</nimi>
+        <merkki>Merkki2</merkki>
+        <tyyppi>Exxact</tyyppi>
+        <hinta>10.90</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>15</id>
+        <nimi>Tarvike3</nimi>
+        <merkki>Merkki2</merkki>
+        <tyyppi>T150</tyyppi>
+        <hinta>82.50</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+</tarvikkeet>
