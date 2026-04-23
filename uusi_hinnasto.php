@@ -4,6 +4,8 @@ include 'config.php';
 
 if(isset($_POST['paivita'])) {
 
+try {
+
   $file=$_POST['xmlfile'];
   $allowedFiles=scandir("hinnastot");
 
@@ -23,95 +25,98 @@ if(isset($_POST['paivita'])) {
 
   pg_query($yhteys,"BEGIN");
 
-  try {
+    try {
 
-    pg_query($yhteys,"
-    CREATE TEMP TABLE hinnasto_import(
-    tarvike_id INT,
-    ostohinta DECIMAL(10,2),
-    myyntihinta DECIMAL(10,2),
-    lahdetiedosto VARCHAR(25)
-    )
-    ");
-
-    foreach($xml->tarvike as $t) {
-      $id=(int)$t->ttiedot->id;
-      $ostohinta=(float)$t->ttiedot->hinta;
-      $myyntihinta= $ostohinta * 1.25;
-
-      pg_query_params(
-      $yhteys,
-      "INSERT INTO hinnasto_import
-      (tarvike_id,ostohinta,myyntihinta,lahdetiedosto)
-      VALUES($1,$2,$3,$4)",
-      array($id,$ostohinta,$myyntihinta,$file)
-      );
-    }
-
-    $changed_prices = pg_query($yhteys,"
-    SELECT
-    t.tarvike_id,
-    t.tarvike_nimi,
-    t.ostohinta vanha_ostohinta,
-    i.ostohinta uusi_ostohinta,
-    t.myyntihinta vanha_myyntihinta,
-    i.myyntihinta uusi_myyntihinta
-    FROM tarvikkeet t
-    JOIN hinnasto_import i
-    ON t.tarvike_id=i.tarvike_id
-    WHERE t.ostohinta<>i.ostohinta
-    ORDER BY t.tarvike_nimi
-    ");
-
-    $rows = pg_num_rows($changed_prices);
-
-    if ($rows == 0) {
-      $success_message = "Hinnasto on jo ajan tasalla.";
-      $changed_prices = NULL;
-      pg_query($yhteys,"ROLLBACK");
-    }
-    else {
       pg_query($yhteys,"
-      INSERT INTO tarvikkeet_hinta_historia (
-      tarvike_id,
-      toimittaja_id,
-      vanha_ostohinta,
-      uusi_ostohinta,
-      vanha_myyntihinta,
-      uusi_myyntihinta,
-      muutos_aika,
-      lahdetiedosto)
+      CREATE TEMP TABLE hinnasto_import(
+      tarvike_id INT,
+      ostohinta DECIMAL(10,2),
+      myyntihinta DECIMAL(10,2),
+      lahdetiedosto VARCHAR(25)
+      )
+      ");
+
+      foreach($xml->tarvike as $t) {
+        $id=(int)$t->ttiedot->id;
+        $ostohinta=(float)$t->ttiedot->hinta;
+        $myyntihinta= $ostohinta * 1.25;
+
+        pg_query_params(
+        $yhteys,
+        "INSERT INTO hinnasto_import
+        (tarvike_id,ostohinta,myyntihinta,lahdetiedosto)
+        VALUES($1,$2,$3,$4)",
+        array($id,$ostohinta,$myyntihinta,$file)
+        );
+      }
+
+      $changed_prices = pg_query($yhteys,"
       SELECT
       t.tarvike_id,
-      t.toimittaja_id,
-      t.ostohinta,
-      i.ostohinta,
-      t.myyntihinta,
-      i.myyntihinta,
-      NOW(),
-      i.lahdetiedosto
+      t.tarvike_nimi,
+      t.ostohinta vanha_ostohinta,
+      i.ostohinta uusi_ostohinta,
+      t.myyntihinta vanha_myyntihinta,
+      i.myyntihinta uusi_myyntihinta
       FROM tarvikkeet t
       JOIN hinnasto_import i
       ON t.tarvike_id=i.tarvike_id
-      WHERE t.ostohinta<>i.ostohinta");
+      WHERE t.ostohinta<>i.ostohinta
+      ORDER BY t.tarvike_nimi
+      ");
 
-      pg_query($yhteys,"
-      UPDATE tarvikkeet t
-      SET ostohinta=i.ostohinta, myyntihinta=i.myyntihinta
-      FROM hinnasto_import i
-      WHERE t.tarvike_id=i.tarvike_id
-      AND t.ostohinta<>i.ostohinta");
+      $rows = pg_num_rows($changed_prices);
 
-      pg_query($yhteys,"COMMIT");
+      if ($rows == 0) {
+        $success_message = "Hinnasto on jo ajan tasalla.";
+        $changed_prices = NULL;
+        pg_query($yhteys,"ROLLBACK");
+      }
+      else {
+        pg_query($yhteys,"
+        INSERT INTO tarvikkeet_hinta_historia (
+        tarvike_id,
+        toimittaja_id,
+        vanha_ostohinta,
+        uusi_ostohinta,
+        vanha_myyntihinta,
+        uusi_myyntihinta,
+        muutos_aika,
+        lahdetiedosto)
+        SELECT
+        t.tarvike_id,
+        t.toimittaja_id,
+        t.ostohinta,
+        i.ostohinta,
+        t.myyntihinta,
+        i.myyntihinta,
+        NOW(),
+        i.lahdetiedosto
+        FROM tarvikkeet t
+        JOIN hinnasto_import i
+        ON t.tarvike_id=i.tarvike_id
+        WHERE t.ostohinta<>i.ostohinta");
 
-      $success_message = "Hinnat päivitetty onnistuneesti.";
+        pg_query($yhteys,"
+        UPDATE tarvikkeet t
+        SET ostohinta=i.ostohinta, myyntihinta=i.myyntihinta
+        FROM hinnasto_import i
+        WHERE t.tarvike_id=i.tarvike_id
+        AND t.ostohinta<>i.ostohinta");
+
+        pg_query($yhteys,"COMMIT");
+
+        $success_message = "Hinnat päivitetty onnistuneesti.";
+      }
+
+    } catch(Exception $e) {
+      pg_query($yhteys,"ROLLBACK");
+
+      $error_message = "Virhe: ".$e->getMessage();
     }
-
-  } catch(Exception $e) {
-    pg_query($yhteys,"ROLLBACK");
-
-    $error_message = "Virhe: ".$e->getMessage();
-  }
+} catch(Exception $e) {
+  $error_message = "Virhe: ".$e->getMessage();
+}
 
 }
 
@@ -128,7 +133,7 @@ if(isset($_POST['paivita'])) {
   $files = array();
 
   foreach(scandir("hinnastot") as $f) {
-    if(pathinfo($f,PATHINFO_EXTENSION)=="XML") {
+    if(pathinfo($f,PATHINFO_EXTENSION)=="xml") {
       $files[]=$f;
     }
   }
@@ -210,7 +215,7 @@ if(isset($_POST['paivita'])) {
 
         <form method="post" action="uusi_hinnasto.php" class="form-container">
           <div class="form-group">
-          <select name="xmlfile">
+          <select name="xmlfile" required>
             <option value="" disabled selected>Valitse hinnasto</option>
           <?php
             foreach($files as $f) {

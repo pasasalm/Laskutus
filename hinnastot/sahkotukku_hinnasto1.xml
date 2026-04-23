@@ -23,55 +23,44 @@
 
 <tarvike>
     <ttiedot>
-        <id>13</id>
-        <nimi>Tarvike1</nimi>
-        <merkki>Merkki1</merkki>
-        <tyyppi>MMJ 3x1,5</tyyppi>
-        <hinta>2.95</hinta>
+        <id>6</id>
+        <nimi>Asennusputki 20mm</nimi>
+        <merkki>Pipelife</merkki>
+        <tyyppi>Asennusputki</tyyppi>
+        <hinta>0.55</hinta>
         <yksikko>m</yksikko>
     </ttiedot>
 </tarvike>
 
 <tarvike>
     <ttiedot>
-        <id>14</id>
-        <nimi>Tarvike2</nimi>
-        <merkki>Merkki2</merkki>
-        <tyyppi>Exxact</tyyppi>
-        <hinta>11.50</hinta>
+        <id>8</id>
+        <nimi>Kaapelikela MMJ 5x2.5</nimi>
+        <merkki>Reka</merkki>
+        <tyyppi>Kaapelikela</tyyppi>
+        <hinta>153.00</hinta>
         <yksikko>kpl</yksikko>
     </ttiedot>
 </tarvike>
 
 <tarvike>
     <ttiedot>
-        <id>15</id>
-        <nimi>Tarvike3</nimi>
-        <merkki>Merkki2</merkki>
-        <tyyppi>T150</tyyppi>
-        <hinta>83.10</hinta>
+        <id>9</id>
+        <nimi>LED-paneeli 60x60</nimi>
+        <merkki>Philips</merkki>
+        <tyyppi>Valopaneeli</tyyppi>
+        <hinta>36.20</hinta>
         <yksikko>kpl</yksikko>
     </ttiedot>
 </tarvike>
 
 <tarvike>
     <ttiedot>
-        <id>16</id>
-        <nimi>Tarvike4</nimi>
-        <merkki>Merkki1</merkki>
-        <tyyppi>Koteloö 12M</tyyppi>
-        <hinta>55.60</hinta>
-        <yksikko>kpl</yksikko>
-    </ttiedot>
-</tarvike>
-
-<tarvike>
-    <ttiedot>
-        <id>17</id>
-        <nimi>Tarvike5</nimi>
-        <merkki>Merkki3</merkki>
-        <tyyppi>M20</tyyppi>
-        <hinta>3.40</hinta>
+        <id>10</id>
+        <nimi>Sulakeautomaatti 16A</nimi>
+        <merkki>GE</merkki>
+        <tyyppi>Sulake</tyyppi>
+        <hinta>4.50</hinta>
         <yksikko>kpl</yksikko>
     </ttiedot>
 </tarvike>
