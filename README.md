@@ -50,12 +50,18 @@ Ilman eduVPN-yhteyttä sivu ei välttämättä avaudu.
 
 ### Vaihtoehto B: Aja omassa ympäristössä (kehityskäyttö)
 
-1. Asenna PHP ja PostgreSQL.
-2. Luo tietokanta taulujen luontilauseilla tiedostosta harjoitustyo_taulujen_luontilauseet.sql.
-3. Luo näkymät tiedostosta nakymat_korjattu.sql.
-4. Lisää testidata tiedostosta esimerkkidata_testaukseen.sql.
-5. Päivitä tietokantayhteys tiedostoon config.php oman ympäristön mukaiseksi.
-6. Käynnistä PHP-palvelin tai julkaise sovellus web-palvelimelle.
+
+1. git clone https://github.com/pasasalm/Laskutus.git 
+2. Asenna PHP ja PostgreSQL. 
+3. Luo tietokanta taulujen luontilauseilla tiedostosta SQL/harjoitustyo_taulujen_luontilauseet.sql. 
+4. Luo näkymät tiedostosta SQL/nakymat_korjattu.sql. 
+5. Lisää testidata tiedostosta  
+SQL/csv_vientilauseet.sql joka hakee data kansiot csv tiedostot tietokantaan. 
+Aja - psql -h localhost -U käyttäjätunnus -d tietokannan_nimi -f SQL/csv_vientilauseet.sql 
+Mikäli haluat viedä datan suoraan tietokantaan INSERT lauseilla, aja: 
+SQL/esimerkkidata_testaukseen.sql. 
+6. Päivitä tietokantayhteys tiedostoon config.php oman ympäristön mukaiseksi. 
+7. Käynnistä PHP-palvelin tai julkaise sovellus web-palvelimelle. 
 
 ## Käyttöohjeet
 
