@@ -1246,7 +1246,14 @@ $oletusLaskunNro = getNextInvoiceNumber();
 
         <main>
             <h2>Luo lasku</h2>
-
+            <div class="form-container">
+                <h3>Muistutuslaskut</h3>
+                <p>
+                    Jos asiakkaan lasku on erääntynyt ja maksamatta, voit luoda muistutuslaskun
+                    erillisellä sivulla.
+                </p>
+                <a class="btn btn-secondary" href="luo_muistutuslasku.php">Siirry muistutuslaskuihin</a>
+            </div>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo escapeInput($message); ?></div>
             <?php endif; ?>
@@ -1260,7 +1267,7 @@ $oletusLaskunNro = getNextInvoiceNumber();
                 <form method="POST" action="">
                     <input type="hidden" name="action" value="select_worksite">
                     <div class="form-group">
-                        <label for="tyokohde_id">Mistä kohteesta haluat luoda tuntityölaskun?</label>
+                        <label for="tyokohde_id">Mistä kohteesta haluat luoda laskun?</label>
                         <select name="tyokohde_id" id="tyokohde_id" onchange="this.form.submit()" required>
                             <option value="">-- Valitse työkohde --</option>
                             <?php foreach ($tyokohteet as $kohde): ?>

@@ -68,7 +68,7 @@ $expired_list = executeQuery($query_expired);
                 <span>Laskutusjärjestelmä</span>
             </div>
             <ul>
-                <li><a href="index.php" class="active">
+                <li><a href="index.php">
                 <i class="fa-solid fa-house"></i>Etusivu</a></li>
                 <li><a href="lisaa_tyokohde.php">
                 <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
