@@ -244,3 +244,29 @@ CREATE INDEX idx_tyo_suorite_sopimus ON tyo_suorite(sopimus_id); -- Usein haetaa
 CREATE INDEX idx_tyo_suorite_pvm ON tyo_suorite(pvm); -- Usein haetaan työsuorituksia päivämäärän perusteella, joten indeksi nopeuttaa näitä hakuja.
 
 
+-- ============================================================================
+-- 11. TARVIKKEET HINTAHISTORIA
+-- ============================================================================
+CREATE TABLE tarvikkeet_hinta_historia (
+    historia_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tarvike_id INT NOT NULL REFERENCES tarvikkeet(tarvike_id) ON DELETE CASCADE,
+    toimittaja_id INT NOT NULL REFERENCES tavarantoimittaja(toimittaja_id) ON DELETE CASCADE,
+    vanha_ostohinta DECIMAL(10,2) NOT NULL,
+    uusi_ostohinta DECIMAL(10,2) NOT NULL,
+    vanha_myyntihinta DECIMAL(10,2) NOT NULL,
+    uusi_myyntihinta DECIMAL(10,2) NOT NULL,
+    muutos_aika TIMESTAMP DEFAULT NOW(),
+    lahdetiedosto VARCHAR(50)
+);
+
+COMMENT ON TABLE tarvikkeet_hinta_historia IS 'Tarvikkeen hintamuutosten historia (T5). Viittaa tavarantoimittajaan ja sisältää hintatiedot, muutoksen ajankohdan ja lähdetiedoston nimen.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.historia_id IS 'Tarvikkeen hinnanmuutostapahtuman yksilöivä tunniste.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.tarvike_id IS 'Viite tarvikkeeseen, johon muutos kohdistui.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.toimittaja_id IS 'Viite tarvikkeen tavarantoimittajaan.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.vanha_ostohinta IS 'Tarvikkeen ostohinto ennen muutosta.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.uusi_ostohinta IS 'Tarvikkeen ostohinta muutoksen jälkeen.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.vanha_myyntihinta IS 'Tarvikkeen myyntihinta ennen muutosta.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.uusi_myyntihinta IS 'Tarvikkeen myyntihinta muutoksen jälkeen. Johdettu uudesta ostohinnasta, 25 % korkeampi kuin uusi ostohinta.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.muutos_aika IS 'Hintamuutoksen päivä ja kellonaika.';
+COMMENT ON COLUMN tarvikkeet_hinta_historia.lahdetiedosto IS 'Tiedoston nimi, josta uusi hinta peräisin.';
+
