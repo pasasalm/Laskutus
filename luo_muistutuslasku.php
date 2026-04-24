@@ -11,13 +11,13 @@ if (isset($_POST['tallenna'])) {
         $laskutuslisa = 5.00;
         $viitenumero = ($_POST['viitenumero'] === '') ? NULL : $_POST['viitenumero'];
 
-        $query_contract_id = executeQuery("SELECT sopimus_id FROM laskutus.lasku WHERE lasku_id = $vanha_lasku_id");
+        $query_contract_id = executeQuery("SELECT sopimus_id FROM lasku WHERE lasku_id = $vanha_lasku_id");
         $contract_id_row = pg_fetch_assoc($query_contract_id);
         $contract_number = $contract_id_row['sopimus_id'];
 
         pg_query($yhteys, "BEGIN");
         try {
-            $query_bill_number = executeQuery("SELECT MAX(laskun_nro) FROM laskutus.lasku");
+            $query_bill_number = executeQuery("SELECT MAX(laskun_nro) FROM lasku");
             $bill_number_row = pg_fetch_assoc($query_bill_number);
             $bill_number = $bill_number_row['max'] + 1;
 
@@ -45,7 +45,7 @@ if (isset($_POST['tallenna'])) {
 
 $query_expired = 
 "SELECT el.lasku_id, el.as_nimi, el.erapaiva 
-FROM laskutus.eraantyvat_laskut el JOIN laskutus.lasku l ON el.lasku_id = l.lasku_id
+FROM eraantyvat_laskut el JOIN laskutus.lasku l ON el.lasku_id = l.lasku_id
 WHERE el.erapaiva < CURRENT_DATE AND l.muistutus_nro = 0";
 $expired_list = executeQuery($query_expired);
 

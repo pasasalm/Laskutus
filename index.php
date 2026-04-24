@@ -63,7 +63,7 @@ include 'config.php';
                     $result = executeQuery("SELECT tarvike_nimi, varasto FROM tarvikkeet ORDER BY varasto ASC");
                     $row = fetchOne($result);
                     $value = number_format($row['varasto'], 0, ',', ' ');
-                    echo "<div class='stat-box'><h4>Varaston vähäisin tarvike</h4><p class='stat-number'>" . $row['tarvike_nimi'] . " (" . $value . ")</p></div>";
+                    echo "<div class='stat-box'><h4>Varaston vähäisin tarvike</h4><p class='stat-number'>" . escapeInput($row['tarvike_nimi']) . " (" . $value . ")</p></div>";
                     ?>
                 </div>
             </section>

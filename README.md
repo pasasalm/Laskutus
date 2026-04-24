@@ -99,6 +99,6 @@ Tyypillinen käyttötapaus:
 
 ## Tekijät
 
-- @pasasalm
-- @petralpp
-- @lautakasakohu
+ - [pasasalm](https://github.com/pasasalm)
+ - [petralpp](https://github.com/petralpp)
+ - [lautakasakohu](https://github.com/lautakasakohu)

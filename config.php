@@ -7,6 +7,7 @@ $y_tiedot = "dbname=-- user=-- password=--";
 
 if (!$yhteys = pg_connect($y_tiedot))
     die("Tietokantayhteyden luominen epäonnistui.");
+    pg_query($yhteys, "SET search_path TO laskutus, public");
 
 // Aseta UTF-8 merkistökoodaus
 pg_set_client_encoding($yhteys, 'UTF8');

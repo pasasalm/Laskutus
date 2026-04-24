@@ -1,0 +1,11 @@
+﻿sopimus_id;tyokohde_id;tila;tyyppi;pvm;urakka_tyo_netto;urakka_tarvikkeet_netto
+1;1;valmis;tuntityö;2026-01-15;;
+2;2;kesken;tuntityö;2026-02-01;;
+3;3;valmis;urakka;2026-01-10;500;300
+4;4;kesken;tuntityö;2026-02-01;;
+5;5;valmis;urakka;2026-01-05;;
+6;6;kesken;tuntityö;2026-02-07;;
+7;7;kesken;tuntityö;2026-02-01;;
+8;9;valmis;urakka;2026-01-20;1200;2500
+9;10;kesken;tuntityö;2026-02-20;;
+10;11;kesken;tuntityö;2026-02-10;;

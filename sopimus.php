@@ -591,7 +591,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         // Urakkahintaojen säätö
-        const basePrice = <?php echo (float) $estimate['total_net']; ?>;
+        const baseWorkNet = <?php echo (float) $estimate['base_work_net']; ?>;
+        const materialNet = <?php echo (float) $estimate['material_net']; ?>;
         
         function updateContractTypeUI() {
             const agreementType = document.getElementById('agreement_type').value;
@@ -607,7 +608,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         function updateCalculatedPrice() {
             const multiplier = parseFloat(document.getElementById('price_multiplier').value) || 1.0;
-            const calculated = basePrice * multiplier;
+            const basePrice = baseWorkNet + materialNet;
+            const calculated = (baseWorkNet * multiplier) + materialNet;
             
             document.getElementById('base_price').textContent = formatCurrency(basePrice);
             document.getElementById('calculated_price').textContent = formatCurrency(calculated);

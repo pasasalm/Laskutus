@@ -4,14 +4,14 @@ include 'config.php';
 
 $query_contracts = 
 "SELECT sopimus.sopimus_id, sopimus.tyokohde_id, tyokohde.kohde_osoite 
-FROM laskutus.sopimus JOIN laskutus.tyokohde ON sopimus.tyokohde_id = tyokohde.tyokohde_id 
+FROM sopimus JOIN laskutus.tyokohde ON sopimus.tyokohde_id = tyokohde.tyokohde_id 
 WHERE sopimus.tila = 'kesken' AND sopimus.tyyppi = 'tuntityö'";
 $contract_list = executeQuery($query_contracts);
 
-$query_worktypes = "SELECT tuntityo_hinnasto.tuntityo_id, tuntityo_hinnasto.nimi FROM laskutus.tuntityo_hinnasto";
+$query_worktypes = "SELECT tuntityo_hinnasto.tuntityo_id, tuntityo_hinnasto.nimi FROM tuntityo_hinnasto";
 $worktype_list = executeQuery($query_worktypes);
 
-$query_supplies = "SELECT tarvikkeet.tarvike_id, tarvikkeet.tarvike_nimi FROM laskutus.tarvikkeet";
+$query_supplies = "SELECT tarvikkeet.tarvike_id, tarvikkeet.tarvike_nimi FROM tarvikkeet";
 $supply_list = executeQuery($query_supplies);
 
 
