@@ -10,8 +10,9 @@ if (isset($_POST['tallenna'])) {
         $erapaiva = $_POST['erapvm'];
         $laskutuslisa = 5.00;
         $viitenumero = ($_POST['viitenumero'] === '') ? NULL : $_POST['viitenumero'];
-
-        $query_contract_id = executeQuery("SELECT sopimus_id FROM lasku WHERE lasku_id = $vanha_lasku_id");
+    
+        $query_contract_id = pg_query_params($yhteys, "SELECT sopimus_id FROM lasku WHERE lasku_id = $1",
+        [$vanha_lasku_id]);
         $contract_id_row = pg_fetch_assoc($query_contract_id);
         $contract_number = $contract_id_row['sopimus_id'];
 

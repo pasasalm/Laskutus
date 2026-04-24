@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = pg_query_params($yhteys, $query, array($client_id, $address));
 
             if ($result && (pg_affected_rows($result) > 0)) {
-                $success_message  = "Työkohde lisätty";
+                $success_message  = "Työkohde '$address' lisätty";
             } else {
                 $error_message = "Työkohteen lisäys epäonnistui";
             }

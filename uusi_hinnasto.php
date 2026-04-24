@@ -158,7 +158,7 @@ try {
                 <span>Laskutusjärjestelmä</span>
             </div>
             <ul>
-                <li><a href="index.php" class="active">
+                <li><a href="index.php">
                 <i class="fa-solid fa-house"></i>Etusivu</a></li>
                 <li><a href="lisaa_tyokohde.php">
                 <i class="fa-solid fa-building"></i>Lisää työkohde</a></li>
@@ -198,12 +198,12 @@ try {
           <?php
               while($r=pg_fetch_assoc($changed_prices)) {
               echo "<tr>";
-              echo "<td>".$r['tarvike_id']."</td>";
-              echo "<td>".$r['tarvike_nimi']."</td>";
-              echo "<td>".$r['uusi_ostohinta']."</td>";
-              echo "<td>".$r['vanha_ostohinta']."</td>";
-              echo "<td>".$r['uusi_myyntihinta']."</td>";
-              echo "<td>".$r['vanha_myyntihinta']."</td>";
+              echo "<td>".htmlspecialchars($r['tarvike_id'])."</td>";
+              echo "<td>".htmlspecialchars($r['tarvike_nimi'])."</td>";
+              echo "<td>".htmlspecialchars($r['uusi_ostohinta'])."</td>";
+              echo "<td>".htmlspecialchars($r['vanha_ostohinta'])."</td>";
+              echo "<td>".htmlspecialchars($r['uusi_myyntihinta'])."</td>";
+              echo "<td>".htmlspecialchars($r['vanha_myyntihinta'])."</td>";
               echo "</tr>";
             }
             ?>
@@ -235,10 +235,10 @@ try {
           <?php
               while($r=pg_fetch_assoc($current_prices)) {
               echo "<tr>";
-              echo "<td>".$r['tarvike_id']."</td>";
-              echo "<td>".$r['tarvike_nimi']."</td>";
-              echo "<td>".$r['ostohinta']."</td>";
-              echo "<td>".$r['myyntihinta']."</td>";
+              echo "<td>".htmlspecialchars($r['tarvike_id'])."</td>";
+              echo "<td>".htmlspecialchars($r['tarvike_nimi'])."</td>";
+              echo "<td>".htmlspecialchars($r['ostohinta'])."</td>";
+              echo "<td>".htmlspecialchars($r['myyntihinta'])."</td>";
               echo "</tr>";
             }
             ?>
