@@ -148,7 +148,6 @@ CREATE TABLE IF NOT EXISTS sopimus (
 COMMENT ON TABLE sopimus IS 'Työkohteeseen liittyvä sopimus/työkokonaisuus. Tyyppi: tuntityö tai urakka. Tila: odottaa_hyväksyntää, kesken (työ käynnissä) tai valmis (laskutusvalmis/päätetty).';
 COMMENT ON COLUMN sopimus.sopimus_id IS 'Sopimuksen yksilöivä tunniste (identity).';
 COMMENT ON COLUMN sopimus.tyokohde_id IS 'Viite työkohteeseen, johon sopimus liittyy. Työkohteen kautta saadaan asiakas.';
-COMMENT ON COLUMN sopimus.tila IS 'Sopimuksen tila: "kesken" (työ käynnissä) tai "valmis" (laskutusvalmis/päätetty).';
 COMMENT ON COLUMN sopimus.tila IS 'Sopimuksen tila: "odottaa_hyväksyntää" (yrityksen käsiteltävä), "kesken" (työ käynnissä) tai "valmis" (laskutusvalmis/päätetty).';
 COMMENT ON COLUMN sopimus.tyyppi IS 'Sopimustyyppi: "tuntityö" (tuntiperusteinen laskutus) tai "urakka" (kiinteähintainen urakkasopimus).';
 COMMENT ON COLUMN sopimus.pvm IS 'Sopimuksen luonti- tai aloituspäivämäärä.';
