@@ -192,4 +192,4 @@ VALUES (8, 4001, 0, '2026-01-25', '2026-02-08', '2026-01-26', '40014');
 
 -- 7. Lasku, joka on juuri erääntymässä (testaa "erääntyy tänään" raportteja)
 INSERT INTO lasku (sopimus_id, laskun_nro, muistutus_nro, pvm, erapaiva, viitenumero)
-VALUES (7, 4002, 0, '2026-02-01', '2026-02-08', '40027'); -- Eräpäivä on tänään (jos tänään on 8.2.2026)
+VALUES (7, 4002, 0, '2026-02-01', CURRENT_DATE, '40027'); -- Eräpäivä on tänään
