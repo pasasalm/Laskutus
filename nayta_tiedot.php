@@ -176,6 +176,13 @@ if ($selectedSupplierId !== '') {
                     Odottavat sopimukset perustuvat näkymään odottavat_sopimukset.
                 </p>
             </section>
+                <div class="form-container">
+                    <h3>Hinnaston muutos</h3>
+                    <p>
+                        Päivitä uusi hinnasto hinnasto sivulla.
+                    </p>
+                    <a class="btn btn-secondary" href="uusi_hinnasto.php">Siirry hinnastoon</a>
+                </div>
 
             <section class="card">
                 <h3>Odotettavat sopimukset</h3>
