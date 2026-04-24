@@ -222,7 +222,7 @@ if (isset($_POST['tallenna'])) {
             ul.innerHTML += `
                 <li>
                     ${t.tuntityo_nimi} | ${t.tunnit} tuntia | Alennus ${t.alennus} %
-                    <button onclick="poistaTyo(${i})">Poista</button>
+                    <button type="button" onclick="poistaTyo(${i})">Poista</button>
                 </li>
             `;
         });
