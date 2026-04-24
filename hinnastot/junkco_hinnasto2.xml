@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tarvikkeet [
+<!ELEMENT tarvikkeet (toimittaja,tarvike*)> 
+<!ELEMENT tarvike (ttiedot)> 
+<!ELEMENT ttiedot (id, nimi, merkki, tyyppi, hinta, yksikko)> 
+<!ELEMENT toimittaja (toim_nimi,osoite?)> 
+<!ELEMENT id (#PCDATA)> 
+<!ELEMENT nimi (#PCDATA)> 
+<!ELEMENT merkki (#PCDATA)> 
+<!ELEMENT tyyppi (#PCDATA)> 
+<!ELEMENT hinta (#PCDATA)> 
+<!ELEMENT yksikko (#PCDATA)> 
+<!ELEMENT toim_nimi (#PCDATA)> 
+<!ELEMENT osoite (#PCDATA)>
+]>
+
+<tarvikkeet>
+
+<toimittaja>
+    <toim_nimi>Junk Co</toim_nimi>
+    <osoite>Romukatu 9, 00500 Helsinki</osoite>
+</toimittaja>
+
+<tarvike>
+    <ttiedot>
+        <id>4</id>
+        <nimi>Opaskirja sähköasennuksiin</nimi>
+        <merkki>Sähköliitto</merkki>
+        <tyyppi>Kirja</tyyppi>
+        <hinta>8.00</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>7</id>
+        <nimi>Käytetty sähkökaappi</nimi>
+        <merkki>Generic</merkki>
+        <tyyppi>Sähkökaappi</tyyppi>
+        <hinta>50.00</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+</tarvikkeet>
