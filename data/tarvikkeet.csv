@@ -1,0 +1,11 @@
+﻿tarvike_id;toimittaja_id;tarvike_nimi;merkki;ostohinta;myyntihinta;yksikko;alv_prosentti;varasto
+1;1;Pistorasia 2-osainen;ABB;5.50;12.00;kpl;24;50
+2;1;Sähköjohto MMJ 3x1.5;Prysmian;0.40;1.20;m;24;500
+3;1;Valokatkaisin;Schneider;4.20;9.50;kpl;24;30
+4;2;Opaskirja sähköasennuksiin;Sähköliitto;8.00;10.00;kpl;10;5
+5;1;Vikavirtasuojakytkin;Ensto;25.00;45.00;kpl;24;5
+6;4;Asennusputki 20mm;Pipelife;0.30;0.90;m;24;100
+7;2;Käytetty sähkökaappi;Generic;50.00;120.00;kpl;24;1
+8;1;Kaapelikela MMJ 5x2.5;Reka;150.00;250.00;kpl;24;10
+9;3;LED-paneeli 60x60;Philips;35.00;75.00;kpl;24;40
+10;3;Sulakeautomaatti 16A;GE;3.50;8.50;kpl;24;100

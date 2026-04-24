@@ -2,7 +2,7 @@
 session_start();
 include 'config.php';
 
-$query_clients = "SELECT asiakas.asiakas_id, asiakas.as_nimi FROM laskutus.asiakas";
+$query_clients = "SELECT asiakas.asiakas_id, asiakas.as_nimi FROM asiakas";
 $client_list = executeQuery($query_clients);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
