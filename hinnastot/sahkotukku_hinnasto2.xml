@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tarvikkeet [
+<!ELEMENT tarvikkeet (toimittaja,tarvike*)> 
+<!ELEMENT tarvike (ttiedot)> 
+<!ELEMENT ttiedot (id, nimi, merkki, tyyppi, hinta, yksikko)> 
+<!ELEMENT toimittaja (toim_nimi,osoite?)> 
+<!ELEMENT id (#PCDATA)> 
+<!ELEMENT nimi (#PCDATA)> 
+<!ELEMENT merkki (#PCDATA)> 
+<!ELEMENT tyyppi (#PCDATA)> 
+<!ELEMENT hinta (#PCDATA)> 
+<!ELEMENT yksikko (#PCDATA)> 
+<!ELEMENT toim_nimi (#PCDATA)> 
+<!ELEMENT osoite (#PCDATA)>
+]>
+
+<tarvikkeet>
+
+<toimittaja>
+    <toim_nimi>Sähkötukku Oy</toim_nimi>
+    <osoite>Tukkutie 4, 00100 Helsinki</osoite>
+</toimittaja>
+
+<tarvike>
+    <ttiedot>
+        <id>6</id>
+        <nimi>Asennusputki 20mm</nimi>
+        <merkki>Pipelife</merkki>
+        <tyyppi>Asennusputki</tyyppi>
+        <hinta>0.30</hinta>
+        <yksikko>m</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>8</id>
+        <nimi>Kaapelikela MMJ 5x2.5</nimi>
+        <merkki>Reka</merkki>
+        <tyyppi>Kaapelikela</tyyppi>
+        <hinta>150.00</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>9</id>
+        <nimi>LED-paneeli 60x60</nimi>
+        <merkki>Philips</merkki>
+        <tyyppi>Valopaneeli</tyyppi>
+        <hinta>35.00</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+<tarvike>
+    <ttiedot>
+        <id>10</id>
+        <nimi>Sulakeautomaatti 16A</nimi>
+        <merkki>GE</merkki>
+        <tyyppi>Sulake</tyyppi>
+        <hinta>3.50</hinta>
+        <yksikko>kpl</yksikko>
+    </ttiedot>
+</tarvike>
+
+</tarvikkeet>
