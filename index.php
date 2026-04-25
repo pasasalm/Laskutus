@@ -78,6 +78,7 @@ include 'config.php';
                         <li>Luoda hintatarjouksia</li>
                         <li>Muodostaa laskuja</li>
                         <li>Tarkastaa tietoja</li>
+                        <li>Muuttaa tarvikehintoja</li>
                     </ul>
                 </div>
 
@@ -97,9 +98,9 @@ include 'config.php';
                     <ol>
                         <li>Siirry "Lisää työkohde" -sivulle ja luo uusi kohde asiakkaalle</li>
                         <li>Valitse "Lisää tapahtuma" -sivulta työkohde ja kirjaa tehdyt työt</li>
-                        <li>Luo hintatarvio "Hinta-arvio" -sivulla</li>
-                        <li>Muodosta lasku "Luo lasku" -sivulla</li>
-                        <li>Tarkastella toimitettuja tuotteita ja hyväksyä odottavia sopimuksia "Näytä tiedot" -sivulla</li>
+                        <li>Luo hinta-arvio "Hinta-arvio" -sivulla</li>
+                        <li>Muodosta laskuja "Luo lasku" -sivulla</li>
+                        <li>Tarkastella toimitettuja tuotteita, hyväksyä odottavia sopimuksia ja vaihtaa tarvikehintoja "Näytä tiedot" -sivulla</li>
                     </ol>
                 </div>
             </div>
